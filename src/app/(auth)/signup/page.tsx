@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Mail, Lock, User, CheckCircle2 } from "lucide-react";
+import { useSignUp } from "@clerk/nextjs";
+
+import { Eye, EyeOff, Mail, Lock, User, CheckCircle2, KeyRound } from "lucide-react";
+import { BrandMark } from "@/components/brand/logo";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -16,245 +19,301 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-interface PasswordRule {
-  label: string;
-  test: (v: string) => boolean;
+function Spinner() {
+  return (
+    <svg className="animate-spin size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
 }
 
-const PASSWORD_RULES: PasswordRule[] = [
-  { label: "Mínimo 8 caracteres", test: (v) => v.length >= 8 },
-  { label: "Uma letra maiúscula", test: (v) => /[A-Z]/.test(v) },
-  { label: "Um número", test: (v) => /[0-9]/.test(v) },
+type ClerkErr = { message?: string; longMessage?: string } | null;
+function clerkMsg(err: ClerkErr): string {
+  return err?.longMessage ?? err?.message ?? "Erro inesperado. Tente novamente.";
+}
+
+const PASSWORD_RULES = [
+  { label: "Mínimo 8 caracteres", test: (v: string) => v.length >= 8 },
+  { label: "Uma letra maiúscula", test: (v: string) => /[A-Z]/.test(v) },
+  { label: "Um número", test: (v: string) => /[0-9]/.test(v) },
 ];
 
 export default function SignupPage() {
   const router = useRouter();
+  const { signUp, fetchStatus } = useSignUp();
+  const isReady = fetchStatus === "idle";
 
+  const [step, setStep] = useState<"form" | "verify">("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [code, setCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const passwordRulesMet = PASSWORD_RULES.map((r) => r.test(password));
-  const allRulesMet = passwordRulesMet.every(Boolean);
+  const rulesMet = PASSWORD_RULES.map((r) => r.test(password));
+  const allRulesMet = rulesMet.every(Boolean);
   const confirmMatch = confirm.length > 0 && confirm === password;
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
-    if (!allRulesMet || !confirmMatch) return;
+    if (!signUp || !allRulesMet || !confirmMatch) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    router.push("/onboarding");
+    setError("");
+
+    const [firstName, ...rest] = name.trim().split(" ");
+    const { error: pwErr } = await signUp.password({
+      emailAddress: email,
+      password,
+      firstName,
+      lastName: rest.join(" ") || undefined,
+    });
+
+    if (pwErr) {
+      setError(clerkMsg(pwErr));
+      setLoading(false);
+      return;
+    }
+
+    const { error: sendErr } = await signUp.verifications.sendEmailCode();
+    if (sendErr) {
+      setError(clerkMsg(sendErr));
+      setLoading(false);
+      return;
+    }
+
+    setStep("verify");
+    setLoading(false);
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!signUp) return;
+    setLoading(true);
+    setError("");
+
+    const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code });
+    if (verifyErr) {
+      setError(clerkMsg(verifyErr));
+      setLoading(false);
+      return;
+    }
+
+    const { error: finalErr } = await signUp.finalize({
+      navigate: ({ decorateUrl }) => router.push(decorateUrl("/onboarding")),
+    });
+    if (finalErr) setError(clerkMsg(finalErr));
+    setLoading(false);
+  }
+
+  async function handleGoogle() {
+    if (!signUp) return;
+    await signUp.sso({
+      strategy: "oauth_google",
+      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectCallbackUrl: `${window.location.origin}/sso-callback`,
+    });
+  }
+
+  if (step === "verify") {
+    return (
+      <div className="mx-auto w-full max-w-md">
+        <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/40">
+          <div className="mb-8 flex flex-col items-center gap-3">
+            <BrandMark size={48} />
+            <span className="text-xl font-bold tracking-tight text-white">Zaia</span>
+          </div>
+
+          <div className="mb-7 text-center space-y-2">
+            <div className="mx-auto mb-4 grid size-14 place-items-center rounded-full bg-violet-500/10 border border-violet-500/30">
+              <KeyRound className="size-6 text-violet-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Verifique seu e-mail</h1>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Enviamos um código de 6 dígitos para{" "}
+              <span className="text-white font-medium">{email}</span>
+            </p>
+          </div>
+
+          <form onSubmit={handleVerify} className="space-y-5">
+            {error && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label htmlFor="code" className="block text-sm font-medium text-slate-300">
+                Código de verificação
+              </label>
+              <input
+                id="code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                maxLength={6}
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-center text-lg font-mono tracking-[0.5em] text-white placeholder:text-slate-600 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all duration-200"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || code.length !== 6}
+              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 text-sm shadow-lg shadow-violet-500/25 transition-all duration-200 active:scale-[0.98]"
+            >
+              {loading ? <span className="flex items-center justify-center gap-2"><Spinner /> Verificando…</span> : "Verificar e continuar"}
+            </button>
+          </form>
+
+          <p className="mt-4 text-center text-xs text-slate-500">
+            Não recebeu o e-mail?{" "}
+            <button
+              type="button"
+              className="text-violet-400 hover:text-violet-300 transition-colors"
+              onClick={() => signUp?.verifications.sendEmailCode()}
+            >
+              Reenviar código
+            </button>
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto w-full max-w-md">
-      {/* Card */}
       <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/40">
-        {/* Logo */}
         <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-blue-600 font-bold text-white text-xl shadow-lg shadow-violet-500/30">
-            Z
-          </div>
+          <BrandMark size={48} />
           <span className="text-xl font-bold tracking-tight text-white">Zaia</span>
         </div>
 
-        {/* Heading + badge */}
         <div className="mb-7 text-center space-y-3">
-          <h1 className="text-2xl font-bold text-white">
-            Criar sua conta grátis
-          </h1>
+          <h1 className="text-2xl font-bold text-white">Criar sua conta grátis</h1>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600/20 to-blue-600/20 border border-violet-500/30 px-3.5 py-1 text-xs font-medium text-violet-300">
             <CheckCircle2 className="size-3.5" />
             7 dias grátis, sem cartão
           </span>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nome */}
+        <form onSubmit={handleSignUp} className="space-y-4">
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <label htmlFor="name" className="block text-sm font-medium text-slate-300">
-              Nome completo
-            </label>
+            <label htmlFor="name" className="block text-sm font-medium text-slate-300">Nome completo</label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500 pointer-events-none" />
               <input
-                id="name"
-                type="text"
-                autoComplete="name"
-                required
-                placeholder="Seu nome"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="name" type="text" autoComplete="name" required placeholder="Seu nome"
+                value={name} onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all duration-200"
               />
             </div>
           </div>
 
-          {/* Email */}
           <div className="space-y-1.5">
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300">
-              E-mail
-            </label>
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300">E-mail</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500 pointer-events-none" />
               <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="email" type="email" autoComplete="email" required placeholder="seu@email.com"
+                value={email} onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all duration-200"
               />
             </div>
           </div>
 
-          {/* Password */}
           <div className="space-y-1.5">
-            <label htmlFor="password" className="block text-sm font-medium text-slate-300">
-              Senha
-            </label>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300">Senha</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500 pointer-events-none" />
               <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                required
-                placeholder="Crie uma senha forte"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                id="password" type={showPassword ? "text" : "password"} autoComplete="new-password"
+                required placeholder="Crie uma senha forte"
+                value={password} onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-11 py-2.5 text-sm text-white placeholder:text-slate-500 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all duration-200"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-              >
+              <button type="button" onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
-
-            {/* Password requirements */}
             {password.length > 0 && (
               <ul className="mt-2 space-y-1.5 pl-1">
                 {PASSWORD_RULES.map((rule, i) => (
                   <li key={rule.label} className="flex items-center gap-2 text-xs">
-                    <CheckCircle2
-                      className={`size-3.5 shrink-0 transition-colors ${
-                        passwordRulesMet[i] ? "text-emerald-400" : "text-slate-600"
-                      }`}
-                    />
-                    <span className={passwordRulesMet[i] ? "text-slate-300" : "text-slate-500"}>
-                      {rule.label}
-                    </span>
+                    <CheckCircle2 className={`size-3.5 shrink-0 transition-colors ${rulesMet[i] ? "text-emerald-400" : "text-slate-600"}`} />
+                    <span className={rulesMet[i] ? "text-slate-300" : "text-slate-500"}>{rule.label}</span>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          {/* Confirm password */}
           <div className="space-y-1.5">
-            <label htmlFor="confirm" className="block text-sm font-medium text-slate-300">
-              Confirmar senha
-            </label>
+            <label htmlFor="confirm" className="block text-sm font-medium text-slate-300">Confirmar senha</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500 pointer-events-none" />
               <input
-                id="confirm"
-                type={showConfirm ? "text" : "password"}
-                autoComplete="new-password"
-                required
-                placeholder="Repita a senha"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
+                id="confirm" type={showConfirm ? "text" : "password"} autoComplete="new-password"
+                required placeholder="Repita a senha"
+                value={confirm} onChange={(e) => setConfirm(e.target.value)}
                 className={`w-full rounded-xl bg-white/5 border pl-10 pr-11 py-2.5 text-sm text-white placeholder:text-slate-500 hover:border-white/20 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                  confirm.length > 0
-                    ? confirmMatch
-                      ? "border-emerald-500/50 focus:ring-emerald-500/30 focus:border-emerald-500/50"
-                      : "border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50"
-                    : "border-white/10 focus:ring-violet-500/50 focus:border-violet-500/50"
+                  confirm.length > 0 ? confirmMatch ? "border-emerald-500/50 focus:ring-emerald-500/30" : "border-red-500/50 focus:ring-red-500/30" : "border-white/10 focus:ring-violet-500/50"
                 }`}
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                aria-label={showConfirm ? "Ocultar senha" : "Mostrar senha"}
-              >
+              <button type="button" onClick={() => setShowConfirm((v) => !v)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                 {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
-            {confirm.length > 0 && !confirmMatch && (
-              <p className="text-xs text-red-400 pl-1">As senhas não coincidem</p>
-            )}
+            {confirm.length > 0 && !confirmMatch && <p className="text-xs text-red-400 pl-1">As senhas não coincidem</p>}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
-            disabled={loading || !allRulesMet || !confirmMatch}
+            disabled={loading || !isReady || !allRulesMet || !confirmMatch}
             className="w-full mt-1 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 text-sm shadow-lg shadow-violet-500/25 transition-all duration-200 active:scale-[0.98]"
           >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Criando conta…
-              </span>
-            ) : (
-              "Criar conta"
-            )}
+            {loading ? <span className="flex items-center justify-center gap-2"><Spinner /> Criando conta…</span> : "Criar conta"}
           </button>
 
-          {/* Divider */}
           <div className="relative flex items-center gap-3">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-slate-500 shrink-0">ou</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          {/* Google OAuth */}
           <button
-            type="button"
-            className="w-full flex items-center justify-center gap-3 rounded-xl glass border border-white/10 hover:border-white/20 text-white font-medium py-2.5 text-sm transition-all duration-200 active:scale-[0.98] hover:bg-white/5"
+            type="button" onClick={handleGoogle} disabled={!isReady}
+            className="w-full flex items-center justify-center gap-3 rounded-xl glass border border-white/10 hover:border-white/20 text-white font-medium py-2.5 text-sm transition-all duration-200 active:scale-[0.98] hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <GoogleIcon className="size-4" />
             Continuar com Google
           </button>
         </form>
 
-        {/* Terms */}
         <p className="mt-4 text-center text-xs text-slate-600 leading-relaxed">
           Ao criar uma conta, você concorda com nossos{" "}
-          <Link href="/terms" className="text-slate-500 hover:text-slate-400 underline underline-offset-2 transition-colors">
-            Termos de Uso
-          </Link>{" "}
-          e{" "}
-          <Link href="/privacy" className="text-slate-500 hover:text-slate-400 underline underline-offset-2 transition-colors">
-            Política de Privacidade
-          </Link>.
+          <Link href="/terms" className="text-slate-500 hover:text-slate-400 underline underline-offset-2">Termos</Link>{" "}
+          e <Link href="/privacy" className="text-slate-500 hover:text-slate-400 underline underline-offset-2">Política de Privacidade</Link>.
         </p>
 
-        {/* Footer */}
         <p className="mt-4 text-center text-sm text-slate-500">
           Já tem conta?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-violet-400 hover:text-violet-300 transition-colors"
-          >
-            Entrar
-          </Link>
+          <Link href="/login" className="font-medium text-violet-400 hover:text-violet-300 transition-colors">Entrar</Link>
         </p>
       </div>
     </div>

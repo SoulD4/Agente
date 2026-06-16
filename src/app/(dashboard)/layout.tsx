@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import {
   Home,
   Bot,
@@ -13,7 +15,11 @@ import {
   Shield,
   Bell,
   ChevronDown,
+  LogOut,
+  Menu,
+  X,
 } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: Home },
@@ -43,6 +49,38 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const displayName = user?.fullName ?? user?.firstName ?? "Usuário";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase();
+  const avatarUrl = user?.imageUrl;
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
+
+  // Close the drawer whenever the route changes.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the mobile drawer is open.
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   const pageTitle =
     pageTitles[pathname] ??
@@ -51,92 +89,163 @@ export default function DashboardLayout({
     ] ??
     "Dashboard";
 
+  const SidebarContent = (
+    <>
+      {/* Logo */}
+      <div className="flex h-16 items-center justify-between border-b border-white/5 px-5">
+        <Logo size={32} />
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="rounded-lg p-1.5 text-white/50 hover:bg-white/5 hover:text-white lg:hidden"
+          aria-label="Fechar menu"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <ul className="space-y-0.5">
+          {navItems.map(({ label, href, icon: Icon }) => {
+            const isActive =
+              pathname === href ||
+              (href !== "/dashboard" && pathname.startsWith(href));
+            return (
+              <li key={href}>
+                <Link
+                  href={href}
+                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150
+                    ${
+                      isActive
+                        ? "bg-violet-600/20 text-violet-300"
+                        : "text-white/50 hover:bg-white/5 hover:text-white/80"
+                    }`}
+                >
+                  {isActive && (
+                    <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-violet-500" />
+                  )}
+                  <Icon
+                    size={18}
+                    className={`shrink-0 transition-colors ${
+                      isActive
+                        ? "text-violet-300"
+                        : "text-white/40 group-hover:text-white/60"
+                    }`}
+                  />
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* User profile */}
+      <div className="border-t border-white/5 px-4 py-4">
+        <div className="relative">
+          <button
+            onClick={() => setProfileOpen((v) => !v)}
+            className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-white/5"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="size-8 shrink-0 rounded-full object-cover" />
+            ) : (
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600">
+                <span className="text-xs font-semibold text-white">{initials}</span>
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium leading-tight text-white">{displayName}</p>
+              <p className="truncate text-xs leading-tight text-white/40">{user?.primaryEmailAddress?.emailAddress ?? ""}</p>
+            </div>
+            <ChevronDown size={14} className={`shrink-0 text-white/30 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {profileOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-white/10 bg-[#1a1a24] py-1 shadow-xl">
+              <Link
+                href="/configuracoes"
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5"
+                onClick={() => setProfileOpen(false)}
+              >
+                <Settings size={14} className="text-slate-500" />
+                Configurações
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5"
+              >
+                <LogOut size={14} />
+                Sair
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-[260px] bg-[#111118] border-r border-white/5 flex flex-col z-50">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-900/40">
-            <span className="text-white font-bold text-base leading-none">Z</span>
-          </div>
-          <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-purple-200 bg-clip-text text-transparent tracking-tight">
-            Zaia
-          </span>
-        </div>
+    <div className="min-h-screen bg-[#0a0a0f]">
+      {/* Desktop sidebar (fixed) */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col border-r border-white/5 bg-[#111118] lg:flex">
+        {SidebarContent}
+      </aside>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <ul className="space-y-0.5">
-            {navItems.map(({ label, href, icon: Icon }) => {
-              const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group relative
-                      ${
-                        isActive
-                          ? "bg-purple-600/20 text-purple-400 border-r-2 border-purple-500"
-                          : "text-white/50 hover:bg-white/5 hover:text-white/80"
-                      }`}
-                  >
-                    <Icon
-                      size={17}
-                      className={`flex-shrink-0 transition-colors ${
-                        isActive ? "text-purple-400" : "text-white/40 group-hover:text-white/60"
-                      }`}
-                    />
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        {/* User profile */}
-        <div className="px-4 py-4 border-t border-white/5">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xs font-semibold">JS</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white leading-tight truncate">João Silva</p>
-              <p className="text-xs text-white/40 leading-tight">Admin</p>
-            </div>
-            <ChevronDown size={14} className="text-white/30 flex-shrink-0" />
-          </div>
-        </div>
+      {/* Mobile drawer + overlay */}
+      <div
+        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity lg:hidden ${
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden={!mobileOpen}
+      />
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[80%] max-w-[300px] flex-col border-r border-white/5 bg-[#111118] transition-transform duration-300 ease-out lg:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {SidebarContent}
       </aside>
 
       {/* Main area */}
-      <div className="flex-1 ml-[260px] flex flex-col min-h-screen">
+      <div className="flex min-h-screen flex-col lg:ml-[260px]">
         {/* Top header */}
-        <header className="sticky top-0 z-40 bg-[#0a0a0f]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 py-4">
-          <h1 className="text-lg font-semibold text-white">{pageTitle}</h1>
-          <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <button className="relative p-2 rounded-xl hover:bg-white/5 transition-colors text-white/50 hover:text-white/80">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-white/5 bg-[#0a0a0f]/90 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="rounded-xl p-2 text-white/60 transition-colors hover:bg-white/5 hover:text-white lg:hidden"
+              aria-label="Abrir menu"
+            >
+              <Menu size={20} />
+            </button>
+            <h1 className="text-base font-semibold text-white sm:text-lg">
+              {pageTitle}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button className="relative rounded-xl p-2 text-white/50 transition-colors hover:bg-white/5 hover:text-white/80">
               <Bell size={18} />
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center leading-none">
+              <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold leading-none text-white">
                 3
               </span>
             </button>
-            {/* User avatar */}
-            <button className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-white/5 transition-colors">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center">
-                <span className="text-white text-xs font-semibold">JS</span>
-              </div>
-              <ChevronDown size={13} className="text-white/40" />
-            </button>
+            <Link href="/configuracoes" className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-white/5">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} className="size-7 rounded-full object-cover" />
+              ) : (
+                <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600">
+                  <span className="text-[10px] font-semibold text-white">{initials}</span>
+                </div>
+              )}
+              <ChevronDown size={13} className="hidden text-white/40 sm:block" />
+            </Link>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-[#0a0a0f]">
-          {children}
-        </main>
+        <main className="flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );
