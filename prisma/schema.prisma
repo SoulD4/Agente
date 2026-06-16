@@ -57,6 +57,10 @@ model Agent {
   organizationId String
   name           String
   description    String?
+  agentType      String?
+  voiceTone      String?
+  greeting       String?     @db.Text
+  schedule       Json?
   systemPrompt   String      @db.Text
   model          String      @default("gpt-4o-mini")
   temperature    Float       @default(0.7)

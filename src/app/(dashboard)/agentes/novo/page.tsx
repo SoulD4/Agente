@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bot,
@@ -259,6 +260,7 @@ function WhatsAppPreview({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function NovoAgentePage() {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>({
     nome: "",
     tipo: "",
@@ -276,6 +278,7 @@ export default function NovoAgentePage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -296,10 +299,23 @@ export default function NovoAgentePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate async save
-    await new Promise((r) => setTimeout(r, 900));
-    setSubmitting(false);
+    setError("");
+
+    const res = await fetch("/api/agents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Erro ao criar agente. Tente novamente.");
+      setSubmitting(false);
+      return;
+    }
+
     setSubmitted(true);
+    setTimeout(() => router.push("/agentes"), 1200);
   }
 
   const labelCls = "block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5";
@@ -509,6 +525,13 @@ export default function NovoAgentePage() {
               label="Domingo"
             />
           </div>
+
+          {/* Error */}
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
 
           {/* CTA */}
           <button
