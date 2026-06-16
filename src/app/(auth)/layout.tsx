@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -26,17 +26,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Logo link top-left */}
-      <Link
-        href="/"
-        className="absolute top-6 left-6 flex items-center gap-2.5 group"
-      >
-        <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-blue-600 font-bold text-white text-sm shadow-lg shadow-violet-500/30 transition-shadow group-hover:shadow-violet-500/50">
-          Z
-        </div>
-        <span className="text-base font-semibold tracking-tight text-white opacity-80 group-hover:opacity-100 transition-opacity">
-          Zaia
-        </span>
-      </Link>
+      <div className="absolute left-6 top-6 z-10">
+        <Logo size={32} />
+      </div>
 
       {/* Page content */}
       <div className="relative z-10 w-full">{children}</div>

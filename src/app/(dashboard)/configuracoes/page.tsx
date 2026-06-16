@@ -138,8 +138,8 @@ function PlanoTab() {
         <h2 className="text-lg font-semibold text-white">Plano e cobrança</h2>
         <p className="text-sm text-slate-400">Gerencie sua assinatura.</p>
       </div>
-      <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-5">
-        <div className="flex items-start justify-between">
+      <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-white">Professional</h3>
@@ -148,11 +148,11 @@ function PlanoTab() {
             <p className="mt-1 text-2xl font-bold text-white">R$ 497<span className="text-base font-normal text-slate-400">/mês</span></p>
             <p className="mt-1 text-xs text-slate-400">Próxima cobrança: 15/07/2026</p>
           </div>
-          <button className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10">
+          <button className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10">
             Fazer upgrade
           </button>
         </div>
-        <ul className="mt-4 grid grid-cols-2 gap-1.5">
+        <ul className="mt-4 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {features.map((f) => (
             <li key={f} className="flex items-center gap-1.5 text-xs text-slate-300">
               <Check className="size-3.5 text-emerald-400" /> {f}
@@ -160,7 +160,7 @@ function PlanoTab() {
           ))}
         </ul>
       </div>
-      <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
         <h4 className="text-sm font-medium text-white">Uso este mês</h4>
         {[
           { label: "Agentes", used: 3, total: 5, color: "bg-blue-500" },
@@ -206,20 +206,20 @@ function IntegracoesTab() {
       </div>
       <div className="space-y-3">
         {integrations.map((i) => (
-          <div key={i.name} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div>
+          <div key={i.name} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="min-w-0">
               <p className="font-medium text-white">{i.name}</p>
-              <p className="text-xs text-slate-400">{i.desc}</p>
+              <p className="truncate text-xs text-slate-400">{i.desc}</p>
             </div>
             {i.connected ? (
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-3">
                 <span className="flex items-center gap-1.5 text-xs text-emerald-400">
                   <span className="size-1.5 rounded-full bg-emerald-400" /> Conectado
                 </span>
                 <button className="text-xs text-slate-400 hover:text-red-400">Desconectar</button>
               </div>
             ) : (
-              <button className="rounded-xl border border-violet-500/40 px-3 py-1.5 text-xs font-medium text-violet-300 hover:bg-violet-500/10">
+              <button className="shrink-0 rounded-xl border border-violet-500/40 px-3 py-1.5 text-xs font-medium text-violet-300 hover:bg-violet-500/10">
                 Conectar
               </button>
             )}
@@ -253,15 +253,17 @@ function NotificacoesTab() {
       </div>
       <div className="space-y-3">
         {items.map((item) => (
-          <div key={item.key} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div>
+          <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="min-w-0">
               <p className="text-sm font-medium text-white">{item.label}</p>
               <p className="text-xs text-slate-400">{item.desc}</p>
             </div>
-            <Toggle
-              checked={settings[item.key]}
-              onChange={() => setSettings((s) => ({ ...s, [item.key]: !s[item.key] }))}
-            />
+            <div className="shrink-0">
+              <Toggle
+                checked={settings[item.key]}
+                onChange={() => setSettings((s) => ({ ...s, [item.key]: !s[item.key] }))}
+              />
+            </div>
           </div>
         ))}
       </div>
@@ -283,7 +285,7 @@ function SegurancaTab() {
         <h2 className="text-lg font-semibold text-white">Segurança</h2>
         <p className="text-sm text-slate-400">Controle de acesso à sua conta.</p>
       </div>
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 space-y-4">
         <h4 className="text-sm font-medium text-white">Alterar senha</h4>
         {(["atual", "nova", "confirmar"] as const).map((k) => (
           <div key={k}>
@@ -308,13 +310,15 @@ function SegurancaTab() {
           Alterar senha
         </button>
       </div>
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="font-medium text-white">Autenticação em dois fatores</p>
             <p className="text-xs text-slate-400">Adicione uma camada extra de segurança</p>
           </div>
-          <Toggle checked={twoFA} onChange={() => setTwoFA((v) => !v)} />
+          <div className="shrink-0">
+            <Toggle checked={twoFA} onChange={() => setTwoFA((v) => !v)} />
+          </div>
         </div>
         {twoFA && (
           <p className="mt-3 text-xs text-emerald-400 flex items-center gap-1">
@@ -322,15 +326,15 @@ function SegurancaTab() {
           </p>
         )}
       </div>
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 space-y-3">
         <h4 className="text-sm font-medium text-white">Sessões ativas</h4>
         {sessions.map((s) => (
-          <div key={s.device} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3">
-            <div>
-              <p className="text-sm text-white">{s.device}</p>
-              <p className="text-xs text-slate-400">{s.location} · {s.last}</p>
+          <div key={s.device} className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm text-white">{s.device}</p>
+              <p className="truncate text-xs text-slate-400">{s.location} · {s.last}</p>
             </div>
-            <button className="text-xs text-red-400 hover:text-red-300">Encerrar</button>
+            <button className="shrink-0 text-xs text-red-400 hover:text-red-300">Encerrar</button>
           </div>
         ))}
       </div>
@@ -350,18 +354,18 @@ const tabContent: Record<string, React.ReactNode> = {
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState("perfil");
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-5xl">
         <h1 className="text-2xl font-bold text-white">Configurações</h1>
         <p className="mt-1 text-slate-400">Gerencie sua conta e preferências.</p>
-        <div className="mt-8 flex gap-8">
-          {/* Left tabs */}
-          <nav className="w-44 shrink-0 space-y-1">
+        <div className="mt-6 sm:mt-8 flex flex-col gap-4 lg:flex-row lg:gap-8">
+          {/* Tabs — horizontal scroll on mobile, vertical column on desktop */}
+          <nav className="flex flex-row gap-1 overflow-x-auto pb-1 lg:w-44 lg:shrink-0 lg:flex-col lg:space-y-1 lg:overflow-visible lg:pb-0 scrollbar-hide">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                className={`flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition lg:w-full ${
                   activeTab === t.id
                     ? "bg-violet-500/15 text-violet-300"
                     : "text-slate-400 hover:bg-white/5 hover:text-white"
@@ -369,12 +373,12 @@ export default function ConfiguracoesPage() {
               >
                 <t.icon className="size-4 shrink-0" />
                 {t.label}
-                {activeTab === t.id && <ChevronRight className="ml-auto size-3.5" />}
+                {activeTab === t.id && <ChevronRight className="ml-auto hidden size-3.5 lg:block" />}
               </button>
             ))}
           </nav>
           {/* Right content */}
-          <div className="flex-1 rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
             {tabContent[activeTab]}
           </div>
         </div>
