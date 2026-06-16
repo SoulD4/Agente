@@ -12,11 +12,28 @@ export async function GET() {
 
   const agents = await prisma.agent.findMany({
     where: { organizationId: org.id },
-    include: { _count: { select: { conversations: true } } },
+    select: {
+      id: true,
+      name: true,
+      agentType: true,
+      voiceTone: true,
+      greeting: true,
+      phoneNumber: true,
+      status: true,
+      createdAt: true,
+      whatsappPhoneNumberId: true,
+      whatsappAccessToken: true, // mapped to boolean below, never returned raw
+      _count: { select: { conversations: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(agents);
+  const safe = agents.map(({ whatsappAccessToken, ...a }) => ({
+    ...a,
+    whatsappConnected: !!whatsappAccessToken && !!a.whatsappPhoneNumberId,
+  }));
+
+  return NextResponse.json(safe);
 }
 
 function buildSystemPrompt(nome: string, tipo: string, tomDeVoz: string, apresentacao: string) {

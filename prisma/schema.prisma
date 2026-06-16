@@ -68,6 +68,11 @@ model Agent {
   channel        Channel     @default(WHATSAPP)
   phoneNumber    String?
   avatarUrl      String?
+
+  // ── Meta WhatsApp Cloud API ──
+  whatsappPhoneNumberId String? @unique
+  whatsappAccessToken   String? @db.Text
+
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

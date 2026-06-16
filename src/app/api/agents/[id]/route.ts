@@ -17,7 +17,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const agent = await getAgent(userId, id);
   if (!agent) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json(agent);
+  const { whatsappAccessToken, ...safe } = agent;
+  return NextResponse.json({ ...safe, whatsappConnected: !!whatsappAccessToken && !!agent.whatsappPhoneNumberId });
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -40,6 +41,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       phoneNumber: body.whatsapp ?? existing.phoneNumber,
       status: body.status ?? existing.status,
       ...(body.schedule ? { schedule: body.schedule } : {}),
+      ...(body.whatsappPhoneNumberId !== undefined ? { whatsappPhoneNumberId: body.whatsappPhoneNumberId || null } : {}),
+      ...(body.whatsappAccessToken !== undefined ? { whatsappAccessToken: body.whatsappAccessToken || null } : {}),
     },
   });
 

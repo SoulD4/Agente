@@ -1,323 +1,315 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   MessageCircle,
-  Plus,
-  RefreshCw,
   CheckCircle2,
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  Send,
-  Wifi,
-  Activity,
-  AlertCircle,
+  Copy,
+  Check,
   Phone,
-  FileText,
+  KeyRound,
+  Loader2,
+  Bot,
+  ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 
-// ─── Log entries ──────────────────────────────────────────────────────────────
+interface AgentLite {
+  id: string;
+  name: string;
+  whatsappPhoneNumberId: string | null;
+  whatsappConnected: boolean;
+}
 
-const connectionLogs = [
-  { time: "14:23:01", icon: "✓", text: "Conexão estabelecida", color: "text-emerald-400" },
-  { time: "14:22:58", icon: "→", text: "Handshake enviado", color: "text-blue-400" },
-  { time: "14:22:45", icon: "✓", text: "QR Code gerado", color: "text-emerald-400" },
-  { time: "14:20:00", icon: "ℹ", text: "Sessão iniciada", color: "text-white/50" },
-];
-
-// ─── Fake QR Code (CSS geometric pattern) ────────────────────────────────────
-
-function FakeQRCode() {
-  // A simple visual approximation of a QR using a grid of squares
-  const pattern = [
-    [1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,1,0,0,1,1,0,0,1,0,0,0,0,0,1],
-    [1,0,1,1,1,0,1,0,1,0,1,0,1,1,0,1,1,1,0,1],
-    [1,0,1,1,1,0,1,0,0,1,0,1,0,1,0,1,1,1,0,1],
-    [1,0,1,1,1,0,1,0,1,0,0,0,1,1,0,1,1,1,0,1],
-    [1,0,0,0,0,0,1,0,0,0,1,1,0,1,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1],
-    [0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0],
-    [1,0,1,1,0,1,1,1,0,0,1,0,1,1,0,1,1,0,1,0],
-    [0,1,0,0,1,0,0,0,1,0,0,1,0,0,1,0,0,1,0,1],
-    [1,0,1,0,1,1,1,1,0,1,1,0,1,0,1,1,0,0,1,0],
-    [0,1,0,1,0,0,0,0,1,0,0,1,0,1,0,0,1,1,0,1],
-    [1,0,1,1,1,0,0,1,0,1,0,0,1,0,1,0,0,0,1,0],
-    [0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,1,0,1,0,1],
-    [1,1,1,1,1,1,1,0,0,1,0,0,1,0,1,0,1,0,0,1],
-    [1,0,0,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,1,0],
-    [1,0,1,1,1,0,1,1,0,1,0,0,1,0,1,0,1,0,1,0],
-    [1,0,1,1,1,0,1,0,1,1,1,0,0,1,0,1,0,0,0,1],
-    [1,0,0,0,0,0,1,0,0,0,1,1,1,0,1,0,1,1,0,0],
-    [1,1,1,1,1,1,1,0,1,0,0,1,0,1,0,0,0,0,1,1],
-  ];
-
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
   return (
-    <div className="inline-block p-3 bg-white rounded-xl">
-      <div className="grid" style={{ gridTemplateColumns: "repeat(20, 1fr)", gap: "1px" }}>
-        {pattern.map((row, ri) =>
-          row.map((cell, ci) => (
-            <div
-              key={`${ri}-${ci}`}
-              style={{ width: 9, height: 9, backgroundColor: cell ? "#0a0a0f" : "white" }}
-            />
-          ))
-        )}
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      className="flex-shrink-0 p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+      aria-label="Copiar"
+    >
+      {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+    </button>
+  );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-1.5">{label}</label>
+      <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-1 py-1">
+        <span className="flex-1 text-sm text-white/70 font-mono truncate py-1.5">{value}</span>
+        <CopyButton value={value} />
       </div>
     </div>
   );
 }
-
-// ─── Stepper ─────────────────────────────────────────────────────────────────
-
-interface StepProps {
-  number: number;
-  title: string;
-  active: boolean;
-  done: boolean;
-}
-
-function Step({ number, title, active, done }: StepProps) {
-  return (
-    <div className={`flex flex-col items-center gap-2 flex-1 ${active ? "opacity-100" : "opacity-35"}`}>
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all ${
-          done
-            ? "bg-emerald-500 text-white"
-            : active
-            ? "bg-violet-500 text-white shadow-[0_0_16px_rgba(139,92,246,0.5)]"
-            : "bg-white/10 text-white/40"
-        }`}
-      >
-        {done ? <CheckCircle2 size={14} /> : number}
-      </div>
-      <span className="text-xs font-medium text-center leading-tight">{title}</span>
-    </div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WhatsAppPage() {
-  const [testOpen, setTestOpen] = useState(false);
-  const [testPhone, setTestPhone] = useState("");
-  const [testMessage, setTestMessage] = useState("");
+  const [agents, setAgents] = useState<AgentLite[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState("");
+  const [phoneNumberId, setPhoneNumberId] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [verifyToken, setVerifyToken] = useState("");
+
+  useEffect(() => {
+    setWebhookUrl(`${window.location.origin}/api/webhooks/whatsapp`);
+    setVerifyToken("zaia-whatsapp-verify");
+    fetch("/api/agents")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setAgents(data);
+          if (data.length > 0) {
+            setSelectedId(data[0].id);
+            setPhoneNumberId(data[0].whatsappPhoneNumberId ?? "");
+          }
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const selected = agents.find((a) => a.id === selectedId);
+
+  function onSelectAgent(id: string) {
+    setSelectedId(id);
+    setSaved(false);
+    setError("");
+    setAccessToken("");
+    const a = agents.find((x) => x.id === id);
+    setPhoneNumberId(a?.whatsappPhoneNumberId ?? "");
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedId) return;
+    setSaving(true);
+    setError("");
+
+    const res = await fetch(`/api/agents/${selectedId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        whatsappPhoneNumberId: phoneNumberId.trim(),
+        ...(accessToken.trim() ? { whatsappAccessToken: accessToken.trim() } : {}),
+        status: "ACTIVE",
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Erro ao salvar. Verifique os dados.");
+      setSaving(false);
+      return;
+    }
+
+    setSaved(true);
+    setSaving(false);
+    setAgents((prev) =>
+      prev.map((a) =>
+        a.id === selectedId
+          ? { ...a, whatsappPhoneNumberId: phoneNumberId.trim(), whatsappConnected: true }
+          : a,
+      ),
+    );
+    setAccessToken("");
+  }
+
+  const inputCls =
+    "w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.07] transition-colors";
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1000px]">
-
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-white">Conexões WhatsApp</h1>
-          <p className="text-sm text-white/40 mt-0.5">Gerencie seus números conectados e sessões ativas</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1100px] space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-900/30">
+          <MessageCircle size={20} className="text-white" />
         </div>
-        <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_28px_rgba(139,92,246,0.5)] self-start sm:self-auto">
-          <Plus size={16} />
-          Adicionar número
-        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">WhatsApp</h1>
+          <p className="text-sm text-white/40 mt-0.5">Conecte seus agentes ao WhatsApp Business (Meta Cloud API)</p>
+        </div>
       </div>
 
-      {/* ── Connected number card ── */}
-      <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl overflow-hidden"
-           style={{ borderLeft: "3px solid #34d399" }}>
-        <div className="p-5">
-          {/* Card header */}
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                <MessageCircle size={20} className="text-emerald-400" />
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={28} className="animate-spin text-emerald-400" />
+        </div>
+      ) : agents.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-5">
+            <Bot size={36} className="text-white/20" />
+          </div>
+          <h3 className="text-base font-semibold text-white mb-2">Crie um agente primeiro</h3>
+          <p className="text-sm text-white/40 max-w-xs mb-6">
+            Você precisa de pelo menos um agente para conectar ao WhatsApp.
+          </p>
+          <Link
+            href="/agentes/novo"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 transition-all duration-200"
+          >
+            Criar agente
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
+          {/* ── Left: config form ── */}
+          <form onSubmit={handleSave} className="space-y-6">
+            {/* Agent selector */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-white/80 flex items-center gap-2">
+                <Bot size={15} className="text-violet-400" />
+                Agente
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {agents.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => onSelectAgent(a.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
+                      selectedId === a.id
+                        ? "bg-violet-600/20 border-violet-500/50 text-violet-200"
+                        : "bg-white/[0.03] border-white/10 text-white/50 hover:text-white/80"
+                    }`}
+                  >
+                    {a.name}
+                    {a.whatsappConnected && <CheckCircle2 size={13} className="text-emerald-400" />}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            {/* Credentials */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-white/80 flex items-center gap-2">
+                <KeyRound size={15} className="text-emerald-400" />
+                Credenciais da Meta
+              </h2>
+
               <div>
-                <p className="text-base font-semibold text-white">(11) 9 9999-0001 · Sofia - Vendas</p>
-                <p className="text-xs text-white/40 mt-0.5">+55 11 99999-0001</p>
+                <label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-1.5">
+                  Phone Number ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 123456789012345"
+                  value={phoneNumberId}
+                  onChange={(e) => setPhoneNumberId(e.target.value)}
+                  className={inputCls}
+                  required
+                />
+                <p className="text-[11px] text-white/30 mt-1.5">
+                  Encontre em Meta for Developers → seu app → WhatsApp → API Setup.
+                </p>
               </div>
-            </div>
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
-              Conectado
-            </span>
-          </div>
 
-          {/* Stats row */}
-          <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 sm:divide-x sm:divide-white/8">
-            <div className="flex items-center gap-2 sm:pr-6">
-              <Wifi size={13} className="text-emerald-400 flex-shrink-0" />
-              <span className="text-xs text-white/60">Conectado há <span className="text-white font-semibold">23 dias</span></span>
-            </div>
-            <div className="flex items-center gap-2 sm:px-6">
-              <Activity size={13} className="text-blue-400 flex-shrink-0" />
-              <span className="text-xs text-white/60"><span className="text-white font-semibold">847 msgs</span>/semana</span>
-            </div>
-            <div className="flex items-center gap-2 sm:pl-6">
-              <CheckCircle2 size={13} className="text-violet-400 flex-shrink-0" />
-              <span className="text-xs text-white/60"><span className="text-white font-semibold">99.2%</span> uptime</span>
-            </div>
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-1.5">
+                  Access Token {selected?.whatsappConnected && <span className="text-emerald-400 normal-case">(já configurado)</span>}
+                </label>
+                <input
+                  type="password"
+                  placeholder={selected?.whatsappConnected ? "•••••••• (deixe em branco para manter)" : "Cole o token permanente aqui"}
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                  className={inputCls}
+                  required={!selected?.whatsappConnected}
+                />
+                <p className="text-[11px] text-white/30 mt-1.5">
+                  Use um <span className="text-white/50">token permanente</span> (System User) para não expirar.
+                </p>
+              </div>
 
-          {/* Actions */}
-          <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:flex-wrap">
-            <button className="px-4 py-2 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-all">
-              Desconectar
-            </button>
-            <button className="px-4 py-2 rounded-xl border border-white/10 text-white/60 hover:bg-white/5 hover:text-white text-xs font-semibold transition-all">
-              Testar conexão
-            </button>
-            <button className="px-4 py-2 rounded-xl border border-white/10 text-white/60 hover:bg-white/5 hover:text-white text-xs font-semibold transition-all flex items-center gap-1.5">
-              <FileText size={12} />
-              Ver logs
-            </button>
-          </div>
-        </div>
-      </div>
+              {error && (
+                <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  <AlertCircle size={15} className="flex-shrink-0" />
+                  {error}
+                </div>
+              )}
 
-      {/* ── Add new connection ── */}
-      <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5 space-y-6">
-        <div>
-          <h2 className="text-sm font-semibold text-white">Conectar novo número</h2>
-          <p className="text-xs text-white/40 mt-0.5">Siga os passos abaixo para vincular um novo número do WhatsApp</p>
-        </div>
+              {saved && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+                  <CheckCircle2 size={15} className="flex-shrink-0" />
+                  Agente conectado! Envie uma mensagem para o número para testar.
+                </div>
+              )}
 
-        {/* Stepper */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4 sm:gap-0 relative">
-          {/* connector line (desktop only) */}
-          <div className="hidden sm:block absolute top-4 left-[calc(16.66%)] right-[calc(16.66%)] h-px bg-white/10 z-0" />
-          <Step number={1} title="Escaneie o QR Code" active={true} done={false} />
-          <Step number={2} title="Aguardando conexão..." active={false} done={false} />
-          <Step number={3} title="Configurar agente" active={false} done={false} />
-        </div>
-
-        {/* QR Code area */}
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-          {/* QR */}
-          <div className="flex flex-col items-center gap-3 flex-shrink-0 mx-auto md:mx-0">
-            <FakeQRCode />
-            <div className="flex items-center justify-center flex-wrap gap-1.5 text-amber-400">
-              <Clock size={12} />
-              <span className="text-xs font-medium">QR expira em <span className="font-bold">45s</span></span>
-              <button className="ml-1 p-0.5 rounded hover:bg-white/10 transition-colors" title="Atualizar QR">
-                <RefreshCw size={12} className="text-white/40 hover:text-white transition-colors" />
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 transition-all duration-200 shadow-lg shadow-emerald-900/30"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Salvando…
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} />
+                    Conectar agente
+                  </>
+                )}
               </button>
             </div>
-          </div>
+          </form>
 
-          {/* Instructions */}
-          <div className="flex-1 space-y-3">
-            <h3 className="text-sm font-semibold text-white">Como conectar</h3>
-            <ol className="space-y-2.5">
-              {[
-                "Abra o WhatsApp no seu celular",
-                "Toque em Menu (⋮) ou Configurações",
-                "Selecione Aparelhos conectados",
-                "Toque em Conectar aparelho",
-                "Aponte a câmera para o QR Code ao lado",
-              ].map((step, i) => (
-                <li key={i} className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {i + 1}
-                  </span>
-                  <span className="text-xs text-white/60 leading-relaxed">{step}</span>
-                </li>
-              ))}
-            </ol>
-
-            <div className="mt-2 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20 flex items-start gap-2">
-              <AlertCircle size={13} className="text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-300/80">
-                O QR Code é atualizado automaticamente a cada 60 segundos por segurança.
+          {/* ── Right: webhook setup ── */}
+          <div className="space-y-4">
+            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white/80">Configurar webhook na Meta</h3>
+              <p className="text-xs text-white/40 leading-relaxed">
+                No painel do seu app na Meta, em <span className="text-white/60">WhatsApp → Configuration</span>, cole estes valores e assine o campo <span className="text-white/60 font-mono">messages</span>.
               </p>
+
+              <ReadOnlyField label="Callback URL" value={webhookUrl} />
+              <ReadOnlyField label="Verify Token" value={verifyToken} />
+
+              <div className="rounded-xl bg-amber-500/5 border border-amber-500/20 p-3">
+                <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                  ⚠️ Defina a env var <span className="font-mono text-amber-200">WHATSAPP_VERIFY_TOKEN</span> na Vercel com o mesmo valor do Verify Token acima, e <span className="font-mono text-amber-200">WHATSAPP_APP_SECRET</span> com o App Secret da Meta.
+                </p>
+              </div>
+
+              <a
+                href="https://developers.facebook.com/apps"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Abrir Meta for Developers
+                <ExternalLink size={12} />
+              </a>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
+              <h3 className="text-sm font-semibold text-white/80 mb-3 flex items-center gap-2">
+                <Phone size={14} className="text-emerald-400" />
+                Como testar
+              </h3>
+              <ol className="space-y-2 text-xs text-white/45 leading-relaxed list-decimal list-inside">
+                <li>Conecte o agente com Phone Number ID + Access Token.</li>
+                <li>Configure o webhook na Meta com a URL e Verify Token ao lado.</li>
+                <li>Envie uma mensagem de WhatsApp para o número do agente.</li>
+                <li>O agente responde automaticamente e a conversa aparece em <span className="text-white/60">Conversas</span>.</li>
+              </ol>
             </div>
           </div>
         </div>
-
-        {/* Connection logs */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <FileText size={13} className="text-white/40" />
-            <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">Logs de conexão</h3>
-          </div>
-          <div className="bg-black/30 rounded-xl border border-white/8 p-4 font-mono overflow-x-auto">
-            <div className="space-y-1.5 min-w-max">
-              {connectionLogs.map((log, i) => (
-                <div key={i} className="flex items-center gap-3 text-xs whitespace-nowrap">
-                  <span className="text-white/25 flex-shrink-0">[{log.time}]</span>
-                  <span className={`${log.color} flex-shrink-0`}>{log.icon}</span>
-                  <span className="text-white/70">{log.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Test section (collapsible) ── */}
-      <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl overflow-hidden">
-        <button
-          onClick={() => setTestOpen((v) => !v)}
-          className="w-full flex items-center justify-between p-5 hover:bg-white/[0.03] transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Send size={15} className="text-violet-400" />
-            <span className="text-sm font-semibold text-white">Enviar mensagem de teste</span>
-          </div>
-          {testOpen ? (
-            <ChevronUp size={16} className="text-white/40" />
-          ) : (
-            <ChevronDown size={16} className="text-white/40" />
-          )}
-        </button>
-
-        {testOpen && (
-          <div className="px-5 pb-5 pt-0 space-y-4 border-t border-white/8">
-            <p className="text-xs text-white/40 mt-4">
-              Envie uma mensagem de teste para verificar se a conexão está funcionando corretamente.
-            </p>
-
-            <div className="space-y-3">
-              {/* Phone input */}
-              <div>
-                <label className="block text-xs font-medium text-white/60 mb-1.5">
-                  Número de destino
-                </label>
-                <div className="relative">
-                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                  <input
-                    type="tel"
-                    value={testPhone}
-                    onChange={(e) => setTestPhone(e.target.value)}
-                    placeholder="+55 11 99999-0000"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.07] transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Message textarea */}
-              <div>
-                <label className="block text-xs font-medium text-white/60 mb-1.5">
-                  Mensagem
-                </label>
-                <textarea
-                  value={testMessage}
-                  onChange={(e) => setTestMessage(e.target.value)}
-                  placeholder="Digite sua mensagem de teste..."
-                  rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.07] transition-all resize-none"
-                />
-              </div>
-
-              {/* Send button */}
-              <div className="flex justify-end">
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all shadow-[0_0_16px_rgba(52,211,153,0.25)] hover:shadow-[0_0_24px_rgba(52,211,153,0.4)]">
-                  <Send size={14} />
-                  Enviar teste
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
+      )}
     </div>
   );
 }
