@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import {
   Home,
   Bot,
@@ -14,6 +15,7 @@ import {
   Shield,
   Bell,
   ChevronDown,
+  LogOut,
   Menu,
   X,
 } from "lucide-react";
@@ -47,7 +49,25 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const displayName = user?.fullName ?? user?.firstName ?? "Usuário";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase();
+  const avatarUrl = user?.imageUrl;
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
 
   // Close the drawer whenever the route changes.
   useEffect(() => {
@@ -122,18 +142,45 @@ export default function DashboardLayout({
 
       {/* User profile */}
       <div className="border-t border-white/5 px-4 py-4">
-        <button className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-white/5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600">
-            <span className="text-xs font-semibold text-white">JS</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium leading-tight text-white">
-              João Silva
-            </p>
-            <p className="text-xs leading-tight text-white/40">Admin</p>
-          </div>
-          <ChevronDown size={14} className="shrink-0 text-white/30" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setProfileOpen((v) => !v)}
+            className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-white/5"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="size-8 shrink-0 rounded-full object-cover" />
+            ) : (
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600">
+                <span className="text-xs font-semibold text-white">{initials}</span>
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium leading-tight text-white">{displayName}</p>
+              <p className="truncate text-xs leading-tight text-white/40">{user?.primaryEmailAddress?.emailAddress ?? ""}</p>
+            </div>
+            <ChevronDown size={14} className={`shrink-0 text-white/30 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {profileOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-white/10 bg-[#1a1a24] py-1 shadow-xl">
+              <Link
+                href="/configuracoes"
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5"
+                onClick={() => setProfileOpen(false)}
+              >
+                <Settings size={14} className="text-slate-500" />
+                Configurações
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5"
+              >
+                <LogOut size={14} />
+                Sair
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
@@ -184,12 +231,16 @@ export default function DashboardLayout({
                 3
               </span>
             </button>
-            <button className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-white/5">
-              <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600">
-                <span className="text-xs font-semibold text-white">JS</span>
-              </div>
+            <Link href="/configuracoes" className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-white/5">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} className="size-7 rounded-full object-cover" />
+              ) : (
+                <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600">
+                  <span className="text-[10px] font-semibold text-white">{initials}</span>
+                </div>
+              )}
               <ChevronDown size={13} className="hidden text-white/40 sm:block" />
-            </button>
+            </Link>
           </div>
         </header>
 

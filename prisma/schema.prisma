@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id              // Clerk user ID (clerk_xxx)
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships OrganizationMember[]
+}
+
+// ─── Organizations ────────────────────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members        OrganizationMember[]
+  agents         Agent[]
+  conversations  Conversation[]
+  knowledgeBases KnowledgeBase[]
+  subscription   Subscription?
+}
+
+model OrganizationMember {
+  id             String     @id @default(cuid())
+  userId         String
+  organizationId String
+  role           MemberRole @default(MEMBER)
+  createdAt      DateTime   @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+// ─── Agents ───────────────────────────────────────────────────────────────────
+
+model Agent {
+  id             String      @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  systemPrompt   String      @db.Text
+  model          String      @default("gpt-4o-mini")
+  temperature    Float       @default(0.7)
+  status         AgentStatus @default(INACTIVE)
+  channel        Channel     @default(WHATSAPP)
+  phoneNumber    String?
+  avatarUrl      String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversations  Conversation[]
+  knowledgeBases KnowledgeBase[] @relation("AgentKnowledgeBases")
+
+  @@index([organizationId])
+}
+
+// ─── Conversations ────────────────────────────────────────────────────────────
+
+model Conversation {
+  id             String             @id @default(cuid())
+  organizationId String
+  agentId        String
+  contactPhone   String
+  contactName    String?
+  status         ConversationStatus @default(OPEN)
+  humanTakeover  Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent        Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([agentId])
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String      @db.Text
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// ─── Knowledge Base ───────────────────────────────────────────────────────────
+
+model KnowledgeBase {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  documents    Document[]
+  agents       Agent[]      @relation("AgentKnowledgeBases")
+
+  @@index([organizationId])
+}
+
+model Document {
+  id              String    @id @default(cuid())
+  knowledgeBaseId String
+  name            String
+  content         String    @db.Text
+  mimeType        String    @default("text/plain")
+  size            Int
+  status          DocStatus @default(PENDING)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  knowledgeBase KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  @@index([knowledgeBaseId])
+}
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                  String    @id @default(cuid())
+  organizationId      String    @unique
+  plan                Plan
+  status              SubStatus @default(TRIALING)
+  stripeCustomerId    String?   @unique
+  stripeSubId         String?   @unique
+  currentPeriodEnd    DateTime?
+  trialEndsAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Plan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+  TRAINING
+}
+
+enum Channel {
+  WHATSAPP
+  INSTAGRAM
+  TELEGRAM
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+  PENDING
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum DocStatus {
+  PENDING
+  PROCESSING
+  READY
+  ERROR
+}
+
+enum SubStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSignIn } from "@clerk/nextjs";
+
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { BrandMark } from "@/components/brand/logo";
 
@@ -17,25 +19,62 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+function Spinner() {
+  return (
+    <svg className="animate-spin size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
+type ClerkErr = { message?: string; longMessage?: string } | null;
+function clerkMsg(err: ClerkErr): string {
+  return err?.longMessage ?? err?.message ?? "Erro inesperado. Tente novamente.";
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const { signIn, fetchStatus } = useSignIn();
+  const isReady = fetchStatus === "idle";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!signIn) return;
     setLoading(true);
-    // Fake async submit
-    await new Promise((r) => setTimeout(r, 800));
-    router.push("/dashboard");
+    setError("");
+
+    const { error: pwErr } = await signIn.password({ identifier: email, password });
+    if (pwErr) {
+      setError(clerkMsg(pwErr));
+      setLoading(false);
+      return;
+    }
+
+    const { error: finalErr } = await signIn.finalize({
+      navigate: ({ decorateUrl }) => router.push(decorateUrl("/dashboard")),
+    });
+    if (finalErr) setError(clerkMsg(finalErr));
+    setLoading(false);
+  }
+
+  async function handleGoogle() {
+    if (!signIn) return;
+    await signIn.sso({
+      strategy: "oauth_google",
+      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectCallbackUrl: `${window.location.origin}/sso-callback`,
+    });
   }
 
   return (
     <div className="mx-auto w-full max-w-md">
-      {/* Card */}
       <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/40">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
@@ -43,19 +82,18 @@ export default function LoginPage() {
           <span className="text-xl font-bold tracking-tight text-white">Zaia</span>
         </div>
 
-        {/* Heading */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Bem-vindo de volta
-          </h1>
-          <p className="text-sm text-slate-400">
-            Entre na sua conta para continuar
-          </p>
+          <h1 className="text-2xl font-bold text-white mb-2">Bem-vindo de volta</h1>
+          <p className="text-sm text-slate-400">Entre na sua conta para continuar</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email */}
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label htmlFor="email" className="block text-sm font-medium text-slate-300">
               E-mail
@@ -75,7 +113,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Password */}
           <div className="space-y-1.5">
             <label htmlFor="password" className="block text-sm font-medium text-slate-300">
               Senha
@@ -103,59 +140,40 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Forgot password */}
           <div className="flex justify-end">
-            <Link
-              href="/forgot-password"
-              className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
-            >
+            <Link href="/forgot-password" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
               Esqueci a senha
             </Link>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isReady}
             className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 text-sm shadow-lg shadow-violet-500/25 transition-all duration-200 active:scale-[0.98]"
           >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Entrando…
-              </span>
-            ) : (
-              "Entrar"
-            )}
+            {loading ? <span className="flex items-center justify-center gap-2"><Spinner /> Entrando…</span> : "Entrar"}
           </button>
 
-          {/* Divider */}
           <div className="relative flex items-center gap-3">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-slate-500 shrink-0">ou</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          {/* Google OAuth */}
           <button
             type="button"
-            className="w-full flex items-center justify-center gap-3 rounded-xl glass border border-white/10 hover:border-white/20 text-white font-medium py-2.5 text-sm transition-all duration-200 active:scale-[0.98] hover:bg-white/5"
+            onClick={handleGoogle}
+            disabled={!isReady}
+            className="w-full flex items-center justify-center gap-3 rounded-xl glass border border-white/10 hover:border-white/20 text-white font-medium py-2.5 text-sm transition-all duration-200 active:scale-[0.98] hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <GoogleIcon className="size-4" />
             Continuar com Google
           </button>
         </form>
 
-        {/* Footer */}
         <p className="mt-6 text-center text-sm text-slate-500">
           Não tem conta?{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-violet-400 hover:text-violet-300 transition-colors"
-          >
+          <Link href="/signup" className="font-medium text-violet-400 hover:text-violet-300 transition-colors">
             Criar conta grátis
           </Link>
         </p>
