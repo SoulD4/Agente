@@ -114,7 +114,7 @@ export default function SignupPage() {
     if (!signUp) return;
     await signUp.sso({
       strategy: "oauth_google",
-      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectUrl: `${window.location.origin}/onboarding`,
       redirectCallbackUrl: `${window.location.origin}/sso-callback`,
     });
   }

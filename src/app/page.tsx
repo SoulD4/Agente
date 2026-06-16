@@ -14,10 +14,11 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { auth } from "@clerk/nextjs/server";
 import { Logo } from "@/components/brand/logo";
 
 /* ── Navbar ──────────────────────────────────────────────────── */
-function Navbar() {
+function Navbar({ isSignedIn }: { isSignedIn: boolean }) {
   const links = [
     { label: "Produto", href: "#features" },
     { label: "Como funciona", href: "#how" },
@@ -40,18 +41,30 @@ function Navbar() {
           ))}
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/login"
-            className="hidden text-sm font-medium text-slate-300 transition hover:text-white sm:block"
-          >
-            Entrar
-          </Link>
-          <Link
-            href="/signup"
-            className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 transition hover:from-violet-500 hover:to-blue-500 sm:px-4"
-          >
-            Começar grátis
-          </Link>
+          {isSignedIn ? (
+            <Link
+              href="/dashboard"
+              className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 transition hover:from-violet-500 hover:to-blue-500 sm:px-4"
+            >
+              Ir para o Dashboard
+              <ArrowRight className="size-4" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden text-sm font-medium text-slate-300 transition hover:text-white sm:block"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 transition hover:from-violet-500 hover:to-blue-500 sm:px-4"
+              >
+                Começar grátis
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>
@@ -475,10 +488,11 @@ function Footer() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const { userId } = await auth();
   return (
     <div className="flex min-h-screen flex-col bg-[#0a0a0f]">
-      <Navbar />
+      <Navbar isSignedIn={!!userId} />
       <main className="flex-1">
         <Hero />
         <SocialProof />

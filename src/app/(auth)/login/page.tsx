@@ -68,7 +68,7 @@ export default function LoginPage() {
     if (!signIn) return;
     await signIn.sso({
       strategy: "oauth_google",
-      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectUrl: `${window.location.origin}/dashboard`,
       redirectCallbackUrl: `${window.location.origin}/sso-callback`,
     });
   }

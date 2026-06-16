@@ -9,7 +9,12 @@ export default function SSOCallbackPage() {
         <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-4 border-violet-500/30 border-t-violet-500" />
         <p className="text-sm text-slate-400">Autenticando…</p>
       </div>
-      <AuthenticateWithRedirectCallback />
+      <AuthenticateWithRedirectCallback
+        signInForceRedirectUrl="/dashboard"
+        signUpForceRedirectUrl="/onboarding"
+        signInFallbackRedirectUrl="/dashboard"
+        signUpFallbackRedirectUrl="/onboarding"
+      />
     </div>
   );
 }
