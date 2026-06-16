@@ -113,7 +113,7 @@ function TimeRange({
   onChangeFim: (v: string) => void;
   disabled: boolean;
 }) {
-  const inputCls = `w-24 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white/70 focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.08] transition-colors disabled:opacity-30 disabled:cursor-not-allowed`;
+  const inputCls = `min-w-0 flex-1 sm:flex-none sm:w-24 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white/70 focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.08] transition-colors disabled:opacity-30 disabled:cursor-not-allowed`;
   return (
     <div className="flex items-center gap-2 text-xs text-white/40">
       <input
@@ -123,7 +123,7 @@ function TimeRange({
         disabled={disabled}
         className={inputCls}
       />
-      <span>até</span>
+      <span className="flex-shrink-0">até</span>
       <input
         type="time"
         value={fim}
@@ -307,7 +307,7 @@ export default function NovoAgentePage() {
     "w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.07] transition-colors";
 
   return (
-    <div className="p-8 max-w-[1200px]">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px]">
 
       {/* ── Back + title ── */}
       <div className="mb-8">
@@ -337,13 +337,13 @@ export default function NovoAgentePage() {
       </div>
 
       {/* ── Two-column layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 lg:gap-8 items-start">
 
         {/* ── Left: form ── */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 min-w-0">
 
           {/* Card: identidade */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-5">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 space-y-5 min-w-0">
             <h2 className="text-sm font-semibold text-white/80 flex items-center gap-2">
               <Bot size={15} className="text-violet-400" />
               Identidade do agente
@@ -408,7 +408,7 @@ export default function NovoAgentePage() {
           </div>
 
           {/* Card: mensagem */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-5">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 space-y-5 min-w-0">
             <h2 className="text-sm font-semibold text-white/80 flex items-center gap-2">
               <MessageCircle size={15} className="text-violet-400" />
               Mensagem de apresentação
@@ -430,7 +430,7 @@ export default function NovoAgentePage() {
           </div>
 
           {/* Card: WhatsApp */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-5">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 space-y-5 min-w-0">
             <h2 className="text-sm font-semibold text-white/80 flex items-center gap-2">
               <Phone size={15} className="text-emerald-400" />
               Número WhatsApp
@@ -452,7 +452,7 @@ export default function NovoAgentePage() {
           </div>
 
           {/* Card: Horário */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-5">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 space-y-5 min-w-0">
             <h2 className="text-sm font-semibold text-white/80 flex items-center gap-2">
               <Clock size={15} className="text-violet-400" />
               Horário de atendimento
@@ -466,7 +466,7 @@ export default function NovoAgentePage() {
                 label="Segunda a Sexta"
               />
               {form.segSex && (
-                <div className="ml-12">
+                <div className="ml-0 sm:ml-12">
                   <TimeRange
                     inicio={form.segSexInicio}
                     fim={form.segSexFim}
@@ -488,7 +488,7 @@ export default function NovoAgentePage() {
                 label="Sábado"
               />
               {form.sabado && (
-                <div className="ml-12">
+                <div className="ml-0 sm:ml-12">
                   <TimeRange
                     inicio={form.sabadoInicio}
                     fim={form.sabadoFim}
@@ -555,7 +555,7 @@ export default function NovoAgentePage() {
         </form>
 
         {/* ── Right: sticky preview ── */}
-        <div className="lg:sticky lg:top-[80px] space-y-4">
+        <div className="lg:sticky lg:top-[80px] space-y-4 min-w-0 w-full max-w-md mx-auto lg:max-w-none lg:mx-0">
           {/* Preview heading */}
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">

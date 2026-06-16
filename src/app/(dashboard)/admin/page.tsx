@@ -54,10 +54,10 @@ export default function AdminPage() {
   const tokenTotal = 6.2;
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold text-white">Painel Administrativo</h1>
           <span className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400">
             <Shield className="size-3.5" /> Admin
@@ -65,7 +65,7 @@ export default function AdminPage() {
         </div>
 
         {/* KPIs */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <div className="flex items-center justify-between">
@@ -84,7 +84,7 @@ export default function AdminPage() {
         </div>
 
         {/* Main grid */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Clients table */}
           <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5">
             <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
@@ -92,7 +92,7 @@ export default function AdminPage() {
               <button className="text-xs text-violet-400 hover:text-violet-300">Ver todos →</button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead>
                   <tr className="border-b border-white/5 text-xs text-slate-500">
                     <th className="px-6 py-3 text-left">Empresa</th>
@@ -179,7 +179,7 @@ export default function AdminPage() {
             <h2 className="font-semibold text-white">Planos e preços</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-b border-white/5 text-xs text-slate-500">
                   <th className="px-6 py-3 text-left">Plano</th>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Logo } from "@/components/brand/logo";
 import {
   Building2,
   Target,
@@ -269,7 +270,7 @@ function Step2({
   setData: (d: Partial<FormData>) => void;
 }) {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {NICHES.map((niche) => {
         const selected = data.niche === niche;
         return (
@@ -312,7 +313,7 @@ function Step3({
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {OBJECTIVES.map((obj) => {
         const selected = data.objectives.includes(obj);
         return (
@@ -388,15 +389,17 @@ function Step4({
           return (
             <div
               key={key}
-              className="flex items-center gap-4 p-3 rounded-xl border border-white/8 bg-white/3"
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 rounded-xl border border-white/8 bg-white/3"
             >
-              <Toggle
-                enabled={day.enabled}
-                onChange={(v) => updateDay(key, "enabled", v)}
-              />
-              <span className="text-sm text-slate-300 w-32 shrink-0">
-                {label}
-              </span>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Toggle
+                  enabled={day.enabled}
+                  onChange={(v) => updateDay(key, "enabled", v)}
+                />
+                <span className="text-sm text-slate-300 sm:w-32 sm:shrink-0">
+                  {label}
+                </span>
+              </div>
               <div
                 className={`flex items-center gap-2 flex-1 transition-opacity ${
                   day.enabled ? "opacity-100" : "opacity-30 pointer-events-none"
@@ -406,14 +409,14 @@ function Step4({
                   type="time"
                   value={day.start}
                   onChange={(e) => updateDay(key, "start", e.target.value)}
-                  className="rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-violet-500 transition"
+                  className="min-w-0 flex-1 sm:flex-none rounded-lg bg-white/5 border border-white/10 px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-violet-500 transition"
                 />
-                <span className="text-slate-500 text-sm">até</span>
+                <span className="text-slate-500 text-sm shrink-0">até</span>
                 <input
                   type="time"
                   value={day.end}
                   onChange={(e) => updateDay(key, "end", e.target.value)}
-                  className="rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-violet-500 transition"
+                  className="min-w-0 flex-1 sm:flex-none rounded-lg bg-white/5 border border-white/10 px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-violet-500 transition"
                 />
               </div>
             </div>
@@ -470,19 +473,19 @@ function Step5({
           placeholder="Descrição breve"
           className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500 transition"
         />
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="Preço (opcional)"
-            className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500 transition"
+            className="w-full sm:flex-1 min-w-0 rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500 transition"
           />
           <button
             type="button"
             onClick={add}
             disabled={!name.trim() || data.products.length >= 20}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition"
+            className="flex items-center justify-center gap-1.5 shrink-0 px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition"
           >
             <Plus className="w-4 h-4" />
             Adicionar
@@ -579,7 +582,7 @@ function Step6({
           type="button"
           onClick={add}
           disabled={!question.trim() || !answer.trim()}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition"
+          className="flex items-center justify-center gap-1.5 w-full sm:w-auto px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition"
         >
           <Plus className="w-4 h-4" />
           Adicionar pergunta
@@ -593,8 +596,8 @@ function Step6({
             className="flex items-start justify-between p-3 rounded-xl border border-white/8 bg-white/3 gap-3"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white">{faq.question}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{faq.answer}</p>
+              <p className="text-sm font-medium text-white break-words">{faq.question}</p>
+              <p className="text-xs text-slate-400 mt-0.5 break-words">{faq.answer}</p>
             </div>
             <button
               type="button"
@@ -612,10 +615,10 @@ function Step6({
             className="flex items-start justify-between p-3 rounded-xl border border-white/5 bg-white/2 gap-3 opacity-40"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-400 italic">
+              <p className="text-sm font-medium text-slate-400 italic break-words">
                 {faq.question}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5 italic">{faq.answer}</p>
+              <p className="text-xs text-slate-500 mt-0.5 italic break-words">{faq.answer}</p>
             </div>
             <button
               type="button"
@@ -666,7 +669,7 @@ function Step7({
         <label className="block text-sm font-medium text-slate-300 mb-2">
           Tom de voz
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {tones.map((tone) => {
             const selected = data.tone === tone;
             return (
@@ -757,7 +760,7 @@ function Step8({
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`relative flex flex-col items-center justify-center gap-3 p-10 rounded-2xl border-2 border-dashed transition-all cursor-default ${
+        className={`relative flex flex-col items-center justify-center gap-3 p-6 sm:p-10 rounded-2xl border-2 border-dashed transition-all cursor-default ${
           dragging
             ? "border-violet-500 bg-violet-500/10"
             : "border-white/15 bg-white/3 hover:border-white/25"
@@ -782,16 +785,16 @@ function Step8({
           {data.fakeFiles.map((name) => (
             <div
               key={name}
-              className="flex items-center justify-between p-3 rounded-xl border border-white/8 bg-white/3"
+              className="flex items-center justify-between gap-3 p-3 rounded-xl border border-white/8 bg-white/3"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <BookOpen className="w-4 h-4 text-violet-400 shrink-0" />
                 <span className="text-sm text-slate-300 truncate">{name}</span>
               </div>
               <button
                 type="button"
                 onClick={() => removeFile(name)}
-                className="p-1 rounded text-slate-500 hover:text-red-400 transition"
+                className="shrink-0 p-1 rounded text-slate-500 hover:text-red-400 transition"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -864,13 +867,13 @@ function Step9({ data }: { data: FormData }) {
     : "Seg–Sex 08:00–18:00";
 
   return (
-    <div className="flex gap-4 h-[420px]">
+    <div className="flex flex-col lg:flex-row gap-4 lg:h-[420px]">
       {/* Config summary */}
-      <div className="w-48 shrink-0 space-y-3 overflow-y-auto pr-1">
+      <div className="w-full lg:w-48 shrink-0 space-y-3 lg:overflow-y-auto lg:pr-1">
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Resumo
         </h3>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2">
           {[
             { label: "Nome", value: data.agentName || "Sofia" },
             { label: "Tom", value: data.tone || "Amigável" },
@@ -901,7 +904,7 @@ function Step9({ data }: { data: FormData }) {
       </div>
 
       {/* Chat */}
-      <div className="flex-1 flex flex-col rounded-2xl border border-white/10 overflow-hidden bg-[#0d0d14]">
+      <div className="flex-1 flex flex-col h-[420px] lg:h-auto min-h-0 rounded-2xl border border-white/10 overflow-hidden bg-[#0d0d14]">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-white/3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center shrink-0">
@@ -923,7 +926,7 @@ function Step9({ data }: { data: FormData }) {
               className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                className={`max-w-[80%] break-words rounded-2xl px-3 py-2 text-sm ${
                   msg.from === "user"
                     ? "bg-violet-600 text-white rounded-br-sm"
                     : "bg-white/10 text-slate-200 rounded-bl-sm"
@@ -957,13 +960,13 @@ function Step9({ data }: { data: FormData }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Digite uma mensagem..."
-            className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500 transition"
+            className="flex-1 min-w-0 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500 transition"
           />
           <button
             type="button"
             onClick={sendMessage}
             disabled={!input.trim() || typing}
-            className="p-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition text-white"
+            className="shrink-0 p-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition text-white"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -1136,21 +1139,18 @@ export default function OnboardingPage() {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-white/6">
+      <header className="relative z-10 flex items-center justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-white/6">
         {/* Zaia logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.4)]">
-            <Bot className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-lg font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-            Zaia
-          </span>
-        </div>
+        <Logo size={32} />
 
         {/* Step counter */}
-        <div className="flex items-center gap-2 text-sm text-slate-400">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-400 shrink-0">
           <StepIcon className="w-4 h-4 text-violet-400" />
-          <span>
+          {/* Compact label on mobile */}
+          <span className="sm:hidden">
+            <span className="font-semibold text-white">{currentStep}</span>/10
+          </span>
+          <span className="hidden sm:inline">
             Passo{" "}
             <span className="font-semibold text-white">{currentStep}</span> de{" "}
             <span className="font-semibold text-white">10</span>
@@ -1176,7 +1176,7 @@ export default function OnboardingPage() {
                 {progress}% concluído
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
               {STEPS[currentStep - 1].label}
             </h1>
             <div className="mt-2 flex gap-1">
@@ -1192,18 +1192,18 @@ export default function OnboardingPage() {
           </div>
 
           {/* Card */}
-          <div className="rounded-2xl border border-white/10 bg-[#111118] p-6 shadow-2xl">
+          <div className="rounded-2xl border border-white/10 bg-[#111118] p-5 sm:p-8 shadow-2xl">
             {renderStep()}
           </div>
 
           {/* Navigation */}
           {currentStep < 10 && (
-            <div className="flex items-center justify-between mt-5">
+            <div className="flex items-center justify-between gap-3 mt-5">
               <button
                 type="button"
                 onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
                 disabled={currentStep === 1}
-                className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                className="px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition"
               >
                 ← Voltar
               </button>
@@ -1212,7 +1212,7 @@ export default function OnboardingPage() {
                 type="button"
                 onClick={() => setCurrentStep((s) => Math.min(10, s + 1))}
                 disabled={!canGoNext()}
-                className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all
+                className="px-5 sm:px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all
                   bg-gradient-to-r from-violet-600 to-blue-600
                   hover:from-violet-500 hover:to-blue-500
                   disabled:opacity-40 disabled:cursor-not-allowed

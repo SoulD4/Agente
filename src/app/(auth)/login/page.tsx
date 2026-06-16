@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { BrandMark } from "@/components/brand/logo";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -38,9 +39,7 @@ export default function LoginPage() {
       <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/40">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-blue-600 font-bold text-white text-xl shadow-lg shadow-violet-500/30">
-            Z
-          </div>
+          <BrandMark size={48} />
           <span className="text-xl font-bold tracking-tight text-white">Zaia</span>
         </div>
 

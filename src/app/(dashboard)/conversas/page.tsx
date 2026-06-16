@@ -10,6 +10,7 @@ import {
   MoreVertical,
   X,
   Filter,
+  ArrowLeft,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -334,7 +335,7 @@ function ChatBubble({ msg }: { msg: ChatMessage }) {
         </div>
       )}
       <div
-        className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+        className={`max-w-[82%] sm:max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
           isBot
             ? "bg-white/8 border border-white/10 text-white/85 rounded-bl-sm"
             : "bg-[#005c4b] text-white/95 rounded-br-sm"
@@ -381,10 +382,14 @@ export default function ConversasPage() {
   const selectedConv = MOCK_CONVERSATIONS.find((c) => c.id === selectedId) ?? null;
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
 
       {/* ── Left sidebar: conversation list ──────────────────────────────── */}
-      <div className="w-80 shrink-0 flex flex-col border-r border-white/[0.08] bg-[#0d0d14]">
+      <div
+        className={`${
+          selectedConv ? "hidden lg:flex" : "flex"
+        } w-full lg:w-80 shrink-0 flex-col border-r border-white/[0.08] bg-[#0d0d14]`}
+      >
 
         {/* Search */}
         <div className="p-3 border-b border-white/[0.06]">
@@ -449,32 +454,46 @@ export default function ConversasPage() {
       </div>
 
       {/* ── Right panel: conversation detail ─────────────────────────────── */}
-      <div className="flex-1 flex flex-col bg-[#0a0a0f] min-w-0">
+      <div
+        className={`${
+          selectedConv ? "flex" : "hidden lg:flex"
+        } flex-1 flex-col bg-[#0a0a0f] min-w-0`}
+      >
         {!selectedConv ? (
           <EmptyDetail />
         ) : (
           <>
             {/* Detail header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.08] bg-[#0d0d14] shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-2 px-3 sm:px-5 py-3.5 border-b border-white/[0.08] bg-[#0d0d14] shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                {/* Back button (mobile only) */}
+                <button
+                  onClick={() => setSelectedId(null)}
+                  className="lg:hidden w-8 h-8 rounded-xl flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors shrink-0"
+                  aria-label="Voltar"
+                >
+                  <ArrowLeft size={18} />
+                </button>
                 {/* Avatar */}
                 <div
-                  className={`w-9 h-9 rounded-full bg-gradient-to-br ${selectedConv.avatarColor} flex items-center justify-center shadow-md`}
+                  className={`w-9 h-9 rounded-full bg-gradient-to-br ${selectedConv.avatarColor} flex items-center justify-center shadow-md shrink-0`}
                 >
                   <span className="text-white text-xs font-bold">{selectedConv.initials}</span>
                 </div>
                 {/* Info */}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-white font-semibold text-sm">{selectedConv.name}</p>
-                    <ConvStatusBadge status={selectedConv.status} />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="text-white font-semibold text-sm truncate">{selectedConv.name}</p>
+                    <span className="shrink-0">
+                      <ConvStatusBadge status={selectedConv.status} />
+                    </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <div className="flex items-center gap-1 text-white/40 text-xs">
-                      <Phone size={10} />
-                      <span>{selectedConv.phone}</span>
+                  <div className="flex items-center gap-3 mt-0.5 min-w-0">
+                    <div className="flex items-center gap-1 text-white/40 text-xs min-w-0">
+                      <Phone size={10} className="shrink-0" />
+                      <span className="truncate">{selectedConv.phone}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-white/40 text-xs">
+                    <div className="hidden sm:flex items-center gap-1 text-white/40 text-xs shrink-0">
                       <Bot size={10} className="text-violet-400" />
                       <span className="text-violet-400/80">{selectedConv.agentName}</span>
                     </div>
@@ -483,30 +502,31 @@ export default function ConversasPage() {
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-colors">
                   <UserCheck size={13} />
-                  Transferir para humano
+                  <span className="hidden xl:inline">Transferir para humano</span>
+                  <span className="xl:hidden">Transferir</span>
                 </button>
-                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/50 border border-white/10 hover:bg-white/5 hover:text-white/70 transition-colors">
+                <button className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/50 border border-white/10 hover:bg-white/5 hover:text-white/70 transition-colors">
                   <X size={12} />
                   Finalizar
                 </button>
-                <button className="w-8 h-8 rounded-xl flex items-center justify-center text-white/35 hover:text-white/60 hover:bg-white/5 transition-colors border border-white/10">
+                <button className="w-8 h-8 rounded-xl flex items-center justify-center text-white/35 hover:text-white/60 hover:bg-white/5 transition-colors border border-white/10 shrink-0">
                   <MoreVertical size={15} />
                 </button>
               </div>
             </div>
 
             {/* Messages area */}
-            <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-5">
               {MOCK_MESSAGES.map((msg) => (
                 <ChatBubble key={msg.id} msg={msg} />
               ))}
             </div>
 
             {/* Monitoring notice */}
-            <div className="mx-5 mb-2 px-3 py-1.5 rounded-xl bg-violet-500/8 border border-violet-500/20 flex items-center gap-2">
+            <div className="mx-3 sm:mx-5 mb-2 px-3 py-1.5 rounded-xl bg-violet-500/8 border border-violet-500/20 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_6px_#a78bfa]" />
               <p className="text-violet-400/80 text-[11px] font-medium">
                 Monitorando — agente está respondendo
@@ -514,7 +534,7 @@ export default function ConversasPage() {
             </div>
 
             {/* Input bar */}
-            <div className="px-5 pb-5 shrink-0">
+            <div className="px-3 sm:px-5 pb-5 shrink-0">
               <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 focus-within:border-violet-500/40 transition-colors">
                 <input
                   value={messageInput}

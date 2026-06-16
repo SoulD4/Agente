@@ -198,22 +198,22 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="p-8 space-y-8 max-w-[1400px]">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-[1400px]">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white">Analytics</h1>
           <p className="text-sm text-white/40 mt-0.5">Visão geral de desempenho e engajamento</p>
         </div>
 
         {/* Date range picker */}
-        <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+        <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1 self-start sm:self-auto">
           {dateOptions.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setDateRange(opt.value)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 dateRange === opt.value
                   ? "bg-violet-600 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
                   : "text-white/50 hover:text-white/80 hover:bg-white/5"
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── KPI row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPICard
           title="Conversas totais"
           value="2.847"
@@ -286,15 +286,16 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Charts row ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Bar chart — 2/3 */}
-        <div className="col-span-3 lg:col-span-2 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5">
+        <div className="lg:col-span-2 min-w-0 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5">
           <div className="mb-5">
             <h2 className="text-sm font-semibold text-white">Conversas por dia</h2>
             <p className="text-xs text-white/40 mt-0.5">Volume diário nos últimos {dateRange} dias</p>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
+          <div className="w-full h-72 min-w-0">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={barDataLabeled}
               margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
@@ -324,17 +325,19 @@ export default function AnalyticsPage() {
               />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Donut chart — 1/3 */}
-        <div className="col-span-3 lg:col-span-1 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5 flex flex-col">
+        <div className="lg:col-span-1 min-w-0 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5 flex flex-col">
           <div className="mb-3">
             <h2 className="text-sm font-semibold text-white">Motivos de encerramento</h2>
             <p className="text-xs text-white/40 mt-0.5">Distribuição por categoria</p>
           </div>
 
           <div className="flex-1 flex flex-col">
-            <ResponsiveContainer width="100%" height={180}>
+            <div className="w-full h-44 min-w-0">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={donutData}
@@ -353,6 +356,7 @@ export default function AnalyticsPage() {
                 <Tooltip content={<DonutTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+            </div>
 
             {/* Legend */}
             <div className="mt-3 space-y-2">
@@ -381,7 +385,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-white/8">
                 <th className="px-5 py-3 text-left">
@@ -460,14 +464,14 @@ export default function AnalyticsPage() {
 
       {/* ── Heatmap ── */}
       <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5">
-        <div className="mb-5 flex items-start justify-between flex-wrap gap-3">
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-white">Horários de pico</h2>
             <p className="text-xs text-white/40 mt-0.5">Volume de conversas por hora e dia da semana</p>
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-white/40">Menos ativo</span>
             <div className="flex items-center gap-0.5">
               {[0.05, 0.15, 0.3, 0.5, 0.7, 0.9, 1].map((op, i) => (
@@ -482,37 +486,42 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Time axis labels */}
-        <div className="ml-10 mb-1 grid gap-0.5" style={{ gridTemplateColumns: `repeat(${timeBlocks.length}, 1fr)` }}>
-          {timeBlocks.map((t) => (
-            <div key={t} className="text-[10px] text-white/30 text-center">{t}</div>
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div className="space-y-1">
-          {heatmapData.map((row, di) => (
-            <div key={di} className="flex items-center gap-2">
-              {/* Day label */}
-              <div className="w-8 text-[11px] text-white/40 text-right flex-shrink-0 font-medium">
-                {days[di]}
-              </div>
-
-              {/* Cells */}
-              <div
-                className="flex-1 grid gap-0.5"
-                style={{ gridTemplateColumns: `repeat(${timeBlocks.length}, 1fr)` }}
-              >
-                {row.map((val, ti) => (
-                  <div
-                    key={ti}
-                    className={`h-7 rounded-md bg-violet-500 ${heatOpacity(val)} hover:ring-1 hover:ring-violet-400/60 transition-all cursor-default`}
-                    title={`${days[di]} ${timeBlocks[ti]} — tráfego ${val * 10}%`}
-                  />
-                ))}
-              </div>
+        {/* Scrollable heatmap (day labels stay pinned left, only cells scroll) */}
+        <div className="overflow-x-auto">
+          <div className="min-w-[520px]">
+            {/* Time axis labels */}
+            <div className="ml-10 mb-1 grid gap-0.5" style={{ gridTemplateColumns: `repeat(${timeBlocks.length}, minmax(20px, 1fr))` }}>
+              {timeBlocks.map((t) => (
+                <div key={t} className="text-[10px] text-white/30 text-center">{t}</div>
+              ))}
             </div>
-          ))}
+
+            {/* Grid */}
+            <div className="space-y-1">
+              {heatmapData.map((row, di) => (
+                <div key={di} className="flex items-center gap-2">
+                  {/* Day label */}
+                  <div className="w-8 text-[11px] text-white/40 text-right flex-shrink-0 font-medium">
+                    {days[di]}
+                  </div>
+
+                  {/* Cells */}
+                  <div
+                    className="flex-1 grid gap-0.5"
+                    style={{ gridTemplateColumns: `repeat(${timeBlocks.length}, minmax(20px, 1fr))` }}
+                  >
+                    {row.map((val, ti) => (
+                      <div
+                        key={ti}
+                        className={`h-7 min-w-[20px] rounded-md bg-violet-500 ${heatOpacity(val)} hover:ring-1 hover:ring-violet-400/60 transition-all cursor-default`}
+                        title={`${days[di]} ${timeBlocks[ti]} — tráfego ${val * 10}%`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

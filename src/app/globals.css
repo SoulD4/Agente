@@ -142,6 +142,15 @@
 
 /* ── Utility classes ───────────────────────────────────────── */
 @layer utilities {
+  /* Hide scrollbar (for horizontal scroll regions like tab/filter rows) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Glass morphism */
   .glass {
     background:              rgba(255, 255, 255, 0.05);

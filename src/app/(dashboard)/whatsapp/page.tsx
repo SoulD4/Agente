@@ -105,15 +105,15 @@ export default function WhatsAppPage() {
   const [testMessage, setTestMessage] = useState("");
 
   return (
-    <div className="p-8 space-y-6 max-w-[1000px]">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1000px]">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white">Conexões WhatsApp</h1>
           <p className="text-sm text-white/40 mt-0.5">Gerencie seus números conectados e sessões ativas</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_28px_rgba(139,92,246,0.5)]">
+        <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_28px_rgba(139,92,246,0.5)] self-start sm:self-auto">
           <Plus size={16} />
           Adicionar número
         </button>
@@ -141,23 +141,23 @@ export default function WhatsAppPage() {
           </div>
 
           {/* Stats row */}
-          <div className="mt-5 flex items-center gap-0 divide-x divide-white/8">
-            <div className="flex items-center gap-2 pr-6">
+          <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 sm:divide-x sm:divide-white/8">
+            <div className="flex items-center gap-2 sm:pr-6">
               <Wifi size={13} className="text-emerald-400 flex-shrink-0" />
               <span className="text-xs text-white/60">Conectado há <span className="text-white font-semibold">23 dias</span></span>
             </div>
-            <div className="flex items-center gap-2 px-6">
+            <div className="flex items-center gap-2 sm:px-6">
               <Activity size={13} className="text-blue-400 flex-shrink-0" />
               <span className="text-xs text-white/60"><span className="text-white font-semibold">847 msgs</span>/semana</span>
             </div>
-            <div className="flex items-center gap-2 pl-6">
+            <div className="flex items-center gap-2 sm:pl-6">
               <CheckCircle2 size={13} className="text-violet-400 flex-shrink-0" />
               <span className="text-xs text-white/60"><span className="text-white font-semibold">99.2%</span> uptime</span>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="mt-5 flex items-center gap-3 flex-wrap">
+          <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:flex-wrap">
             <button className="px-4 py-2 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-all">
               Desconectar
             </button>
@@ -180,9 +180,9 @@ export default function WhatsAppPage() {
         </div>
 
         {/* Stepper */}
-        <div className="flex items-start gap-0 relative">
-          {/* connector lines */}
-          <div className="absolute top-4 left-[calc(16.66%)] right-[calc(16.66%)] h-px bg-white/10 z-0" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4 sm:gap-0 relative">
+          {/* connector line (desktop only) */}
+          <div className="hidden sm:block absolute top-4 left-[calc(16.66%)] right-[calc(16.66%)] h-px bg-white/10 z-0" />
           <Step number={1} title="Escaneie o QR Code" active={true} done={false} />
           <Step number={2} title="Aguardando conexão..." active={false} done={false} />
           <Step number={3} title="Configurar agente" active={false} done={false} />
@@ -191,9 +191,9 @@ export default function WhatsAppPage() {
         {/* QR Code area */}
         <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
           {/* QR */}
-          <div className="flex flex-col items-center gap-3 flex-shrink-0">
+          <div className="flex flex-col items-center gap-3 flex-shrink-0 mx-auto md:mx-0">
             <FakeQRCode />
-            <div className="flex items-center gap-1.5 text-amber-400">
+            <div className="flex items-center justify-center flex-wrap gap-1.5 text-amber-400">
               <Clock size={12} />
               <span className="text-xs font-medium">QR expira em <span className="font-bold">45s</span></span>
               <button className="ml-1 p-0.5 rounded hover:bg-white/10 transition-colors" title="Atualizar QR">
@@ -237,14 +237,16 @@ export default function WhatsAppPage() {
             <FileText size={13} className="text-white/40" />
             <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">Logs de conexão</h3>
           </div>
-          <div className="bg-black/30 rounded-xl border border-white/8 p-4 space-y-1.5 font-mono">
-            {connectionLogs.map((log, i) => (
-              <div key={i} className="flex items-center gap-3 text-xs">
-                <span className="text-white/25 flex-shrink-0">[{log.time}]</span>
-                <span className={`${log.color} flex-shrink-0`}>{log.icon}</span>
-                <span className="text-white/70">{log.text}</span>
-              </div>
-            ))}
+          <div className="bg-black/30 rounded-xl border border-white/8 p-4 font-mono overflow-x-auto">
+            <div className="space-y-1.5 min-w-max">
+              {connectionLogs.map((log, i) => (
+                <div key={i} className="flex items-center gap-3 text-xs whitespace-nowrap">
+                  <span className="text-white/25 flex-shrink-0">[{log.time}]</span>
+                  <span className={`${log.color} flex-shrink-0`}>{log.icon}</span>
+                  <span className="text-white/70">{log.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -150,7 +150,7 @@ function DocumentosTab() {
           e.preventDefault();
           setDragging(false);
         }}
-        className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer
+        className={`border-2 border-dashed rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer
           ${
             dragging
               ? "border-violet-500/60 bg-violet-500/8"
@@ -161,7 +161,7 @@ function DocumentosTab() {
           <Upload size={22} className="text-violet-400" />
         </div>
         <div className="text-center">
-          <p className="text-white/80 font-medium">
+          <p className="text-white/80 font-medium text-sm sm:text-base">
             Arraste PDFs, DOCs, TXTs ou XLSXs
           </p>
           <p className="text-white/40 text-sm mt-1">
@@ -192,14 +192,17 @@ function DocumentosTab() {
                 <p className="text-white/90 text-sm font-medium truncate">
                   {doc.name}
                 </p>
-                <p className="text-white/40 text-xs mt-0.5">
-                  {doc.size} · {doc.date}
+                <p className="text-white/40 text-xs mt-0.5 truncate">
+                  <span className="hidden sm:inline">{doc.size} · {doc.date}</span>
+                  <span className="sm:hidden">{doc.size}</span>
                 </p>
               </div>
-              <StatusBadge status={doc.status} />
+              <div className="shrink-0">
+                <StatusBadge status={doc.status} />
+              </div>
               <button
                 onClick={() => removeDoc(doc.id)}
-                className="ml-2 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                className="ml-2 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
               >
                 <Trash2 size={14} />
               </button>
@@ -268,7 +271,7 @@ function FaqTab() {
                     e.stopPropagation();
                     removeFaq(faq.id);
                   }}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -399,10 +402,12 @@ function LinksTab() {
               </p>
               <p className="text-white/40 text-xs mt-0.5 truncate">{link.url}</p>
             </div>
-            <StatusBadge status={link.status} />
+            <div className="shrink-0">
+              <StatusBadge status={link.status} />
+            </div>
             <button
               onClick={() => removeLink(link.id)}
-              className="ml-2 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+              className="ml-2 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
             >
               <Trash2 size={14} />
             </button>
@@ -437,23 +442,23 @@ export default function TreinamentoPage() {
   ];
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       {/* ── Header row ───────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Base de Conhecimento</h1>
           <p className="text-white/40 text-sm mt-1">
             Gerencie os documentos e informações que seus agentes utilizam
           </p>
         </div>
-        <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/20">
+        <button className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/20 self-start sm:self-auto">
           <Plus size={16} />
           Adicionar documento
         </button>
       </div>
 
       {/* ── Agent selector ───────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <div className="relative">
           <button className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white hover:bg-white/8 hover:border-white/20 transition-all">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
@@ -473,16 +478,16 @@ export default function TreinamentoPage() {
       </div>
 
       {/* ── Upload / Knowledge card ──────────────────────────────────────── */}
-      <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-6">
+      <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-4 sm:p-6">
         <h2 className="text-white font-semibold mb-5">Adicionar conhecimento</h2>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white/5 rounded-xl p-1 mb-6 w-fit">
+        <div className="flex gap-1 bg-white/5 rounded-xl p-1 mb-6 w-full sm:w-fit overflow-x-auto whitespace-nowrap">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150
+              className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150
                 ${
                   activeTab === tab.id
                     ? "bg-violet-600/90 text-white shadow shadow-violet-500/30"
@@ -502,7 +507,7 @@ export default function TreinamentoPage() {
       </div>
 
       {/* ── Stats row ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           {
             icon: <FileText size={18} />,

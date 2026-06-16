@@ -138,19 +138,19 @@ interface StatCardProps {
 
 function StatCard({ title, value, change, icon: Icon, iconBg, iconColor }: StatCardProps) {
   return (
-    <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5 flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center`}>
+    <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
           <Icon size={18} className={iconColor} />
         </div>
-        <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+        <span className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5 whitespace-nowrap">
           <TrendingUp size={10} />
           {change}
         </span>
       </div>
-      <div>
-        <p className="text-xs text-slate-400 mb-1">{title}</p>
-        <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
+      <div className="min-w-0">
+        <p className="text-xs text-slate-400 mb-1 truncate">{title}</p>
+        <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{value}</p>
       </div>
     </div>
   );
@@ -195,10 +195,10 @@ function PieLegend() {
 
 export default function DashboardPage() {
   return (
-    <div className="p-8 space-y-8 max-w-[1400px]">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-[1400px]">
 
       {/* ── 1. Stats row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Conversas hoje"
           value="247"
@@ -234,15 +234,16 @@ export default function DashboardPage() {
       </div>
 
       {/* ── 2. Charts row ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Line chart — 2/3 */}
-        <div className="col-span-3 lg:col-span-2 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5">
+        <div className="lg:col-span-2 min-w-0 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-4 sm:p-5">
           <div className="mb-5">
             <h2 className="text-sm font-semibold text-white">Conversas nos últimos 7 dias</h2>
             <p className="text-xs text-slate-500 mt-0.5">Volume diário de conversas iniciadas</p>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="w-full h-72 min-w-0">
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={conversationData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis
@@ -267,15 +268,17 @@ export default function DashboardPage() {
               />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Pie chart — 1/3 */}
-        <div className="col-span-3 lg:col-span-1 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5">
+        <div className="lg:col-span-1 min-w-0 bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-4 sm:p-5">
           <div className="mb-3">
             <h2 className="text-sm font-semibold text-white">Conversas por agente</h2>
             <p className="text-xs text-slate-500 mt-0.5">Distribuição hoje</p>
           </div>
-          <ResponsiveContainer width="100%" height={160}>
+          <div className="w-full h-40 min-w-0">
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={agentPieData}
@@ -293,6 +296,7 @@ export default function DashboardPage() {
               </Pie>
             </PieChart>
           </ResponsiveContainer>
+          </div>
           <PieLegend />
         </div>
       </div>
@@ -301,7 +305,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Recent conversations */}
-        <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5 flex flex-col">
+        <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-4 sm:p-5 flex flex-col min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Conversas recentes</h2>
             <Link
@@ -346,7 +350,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Active agents */}
-        <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-5 flex flex-col">
+        <div className="bg-white/5 border border-white/10 backdrop-blur rounded-2xl p-4 sm:p-5 flex flex-col min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Agentes ativos</h2>
             <Link
@@ -371,14 +375,14 @@ export default function DashboardPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium text-white">{agent.name}</span>
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${agent.typeColor}`}>
+                    <span className="text-sm font-medium text-white truncate">{agent.name}</span>
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${agent.typeColor}`}>
                       {agent.type}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Wifi size={10} className="text-white/30" />
-                    <span className="text-xs text-white/40">{agent.number}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Wifi size={10} className="text-white/30 flex-shrink-0" />
+                    <span className="text-xs text-white/40 truncate">{agent.number}</span>
                   </div>
                 </div>
 
@@ -403,7 +407,7 @@ export default function DashboardPage() {
           <p className="text-xs text-slate-500 mt-0.5">Configure sua plataforma em poucos passos</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Card 1 */}
           <Link
             href="/agentes/novo"

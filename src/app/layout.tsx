@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,17 +12,53 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://zaia-two.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Zaia — Seu time de IA no WhatsApp",
+  title: {
+    default: "Zaia — Seu time de IA no WhatsApp",
+    template: "%s · Zaia",
+  },
   description:
     "Crie agentes de IA que vendem, atendem e agendam pelo WhatsApp 24/7. Configure em minutos, sem código. A plataforma de agentes de IA para empresas que querem escalar.",
-  metadataBase: new URL("https://zaia.app"),
+  metadataBase: new URL(siteUrl),
+  applicationName: "Zaia",
+  keywords: [
+    "agente de IA",
+    "WhatsApp",
+    "atendimento automatizado",
+    "chatbot",
+    "SDR de IA",
+    "automação de vendas",
+    "WhatsApp Business",
+  ],
+  authors: [{ name: "Zaia" }],
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Zaia — Seu time de IA no WhatsApp",
     description:
-      "Crie agentes de IA que vendem, atendem e agendam pelo WhatsApp 24/7.",
+      "Agentes de IA que vendem, atendem e agendam pelo WhatsApp 24/7. Configure em minutos, sem código.",
     type: "website",
+    locale: "pt_BR",
+    siteName: "Zaia",
+    url: siteUrl,
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Zaia — Seu time de IA no WhatsApp",
+    description:
+      "Agentes de IA que vendem, atendem e agendam pelo WhatsApp 24/7.",
+  },
+  robots: { index: true, follow: true },
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0f",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
