@@ -136,13 +136,8 @@ async function processWebhook(body: WhatsAppWebhookBody) {
 
         const reply = await generateAgentReply(agent, history, incomingText);
 
-        await sendWhatsAppText({
-          phoneNumberId,
-          accessToken: agent.whatsappAccessToken,
-          to: contactPhone,
-          text: reply,
-        });
-
+        // Persist the assistant reply first so the conversation always reflects
+        // what the bot decided, even if the WhatsApp delivery fails.
         await prisma.message.create({
           data: {
             conversationId: conversation.id,
@@ -150,6 +145,27 @@ async function processWebhook(body: WhatsAppWebhookBody) {
             content: reply,
           },
         });
+
+        // Attempt delivery. Capture failures into a visible SYSTEM message so the
+        // operator can diagnose without reading server logs.
+        try {
+          await sendWhatsAppText({
+            phoneNumberId,
+            accessToken: agent.whatsappAccessToken,
+            to: contactPhone,
+            text: reply,
+          });
+        } catch (sendErr) {
+          const detail = sendErr instanceof Error ? sendErr.message : String(sendErr);
+          console.error("WhatsApp delivery failed:", detail);
+          await prisma.message.create({
+            data: {
+              conversationId: conversation.id,
+              role: "SYSTEM",
+              content: `⚠️ Falha ao enviar pelo WhatsApp: ${detail}`,
+            },
+          });
+        }
 
         await prisma.conversation.update({
           where: { id: conversation.id },

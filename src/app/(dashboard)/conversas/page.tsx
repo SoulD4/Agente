@@ -186,6 +186,17 @@ function ChatBubble({ msg }: { msg: DbMessage }) {
     minute: "2-digit",
   });
 
+  // System messages (e.g. delivery errors) render as a centered notice.
+  if (msg.role === "SYSTEM") {
+    return (
+      <div className="flex justify-center mb-3">
+        <div className="max-w-[90%] px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300/90 text-xs text-center break-words">
+          {msg.content}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex ${isBot ? "justify-start" : "justify-end"} mb-3`}>
       {isBot && (
