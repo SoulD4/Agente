@@ -1,252 +1,108 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Search,
   Phone,
   Bot,
   UserCheck,
-  Send,
   MoreVertical,
   X,
   Filter,
   ArrowLeft,
+  Loader2,
+  MessageCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ConvStatus = "Ativa" | "Aguardando" | "Finalizada";
+type DbStatus = "OPEN" | "CLOSED" | "PENDING";
 type FilterType = "Todas" | "Ativas" | "Aguardando" | "Finalizadas";
 
-interface Conversation {
+interface ConvSummary {
   id: string;
-  name: string;
-  phone: string;
-  initials: string;
-  avatarColor: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  agentName: string;
-  agentColor: string;
-  status: ConvStatus;
+  contactName: string | null;
+  contactPhone: string;
+  status: DbStatus;
+  humanTakeover: boolean;
+  updatedAt: string;
+  createdAt: string;
+  agent: { id: string; name: string } | null;
+  lastMessage: { content: string; role: string; createdAt: string } | null;
 }
 
-interface ChatMessage {
+interface DbMessage {
   id: string;
-  role: "bot" | "user";
-  text: string;
-  time: string;
+  conversationId: string;
+  role: "USER" | "ASSISTANT" | "SYSTEM";
+  content: string;
+  createdAt: string;
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+interface ConvDetail extends ConvSummary {
+  messages: DbMessage[];
+}
 
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    id: "c1",
-    name: "Camila Ferreira",
-    phone: "+55 11 99201-3344",
-    initials: "CF",
-    avatarColor: "from-violet-500 to-purple-700",
-    lastMessage: "Oi! Quero saber mais sobre o plano Premium, por favor.",
-    time: "agora",
-    unread: 2,
-    agentName: "Sofia",
-    agentColor: "text-violet-400 bg-violet-500/15",
-    status: "Ativa",
-  },
-  {
-    id: "c2",
-    name: "Rafael Mendes",
-    phone: "+55 21 98877-5566",
-    initials: "RM",
-    avatarColor: "from-blue-500 to-blue-700",
-    lastMessage: "Meu pedido #4521 ainda não chegou, pode verificar?",
-    time: "2min",
-    unread: 1,
-    agentName: "Max",
-    agentColor: "text-blue-400 bg-blue-500/15",
-    status: "Aguardando",
-  },
-  {
-    id: "c3",
-    name: "Juliana Costa",
-    phone: "+55 31 97766-2211",
-    initials: "JC",
-    avatarColor: "from-emerald-500 to-teal-600",
-    lastMessage: "Perfeito, obrigada pela ajuda! Vou efetuar o pagamento agora.",
-    time: "15min",
-    unread: 0,
-    agentName: "Sofia",
-    agentColor: "text-violet-400 bg-violet-500/15",
-    status: "Ativa",
-  },
-  {
-    id: "c4",
-    name: "Marcos Oliveira",
-    phone: "+55 85 96655-4433",
-    initials: "MO",
-    avatarColor: "from-amber-500 to-orange-600",
-    lastMessage: "Qual é a taxa de juros do parcelamento em 12x?",
-    time: "1h",
-    unread: 0,
-    agentName: "Sofia",
-    agentColor: "text-violet-400 bg-violet-500/15",
-    status: "Ativa",
-  },
-  {
-    id: "c5",
-    name: "Beatriz Santos",
-    phone: "+55 11 95544-8877",
-    initials: "BS",
-    avatarColor: "from-pink-500 to-rose-600",
-    lastMessage: "Preciso cancelar meu plano, como faço isso?",
-    time: "Ontem",
-    unread: 0,
-    agentName: "Max",
-    agentColor: "text-blue-400 bg-blue-500/15",
-    status: "Aguardando",
-  },
-  {
-    id: "c6",
-    name: "Diego Almeida",
-    phone: "+55 41 94433-6655",
-    initials: "DA",
-    avatarColor: "from-cyan-500 to-blue-600",
-    lastMessage: "Obrigado! Já recebi o código de rastreio.",
-    time: "Ontem",
-    unread: 0,
-    agentName: "Max",
-    agentColor: "text-blue-400 bg-blue-500/15",
-    status: "Finalizada",
-  },
-  {
-    id: "c7",
-    name: "Larissa Nunes",
-    phone: "+55 62 93322-7788",
-    initials: "LN",
-    avatarColor: "from-indigo-500 to-violet-700",
-    lastMessage: "Consigo trocar o produto por outro modelo?",
-    time: "Ontem",
-    unread: 3,
-    agentName: "Sofia",
-    agentColor: "text-violet-400 bg-violet-500/15",
-    status: "Ativa",
-  },
-  {
-    id: "c8",
-    name: "Carlos Rodrigues",
-    phone: "+55 11 92211-9900",
-    initials: "CR",
-    avatarColor: "from-red-500 to-rose-700",
-    lastMessage: "Atendimento excelente! Muito obrigado.",
-    time: "Ontem",
-    unread: 0,
-    agentName: "Max",
-    agentColor: "text-blue-400 bg-blue-500/15",
-    status: "Finalizada",
-  },
-  {
-    id: "c9",
-    name: "Fernanda Lima",
-    phone: "+55 71 91100-2233",
-    initials: "FL",
-    avatarColor: "from-fuchsia-500 to-pink-700",
-    lastMessage: "Quando vocês têm promoção de Black Friday?",
-    time: "Ontem",
-    unread: 0,
-    agentName: "Sofia",
-    agentColor: "text-violet-400 bg-violet-500/15",
-    status: "Aguardando",
-  },
-  {
-    id: "c10",
-    name: "André Moreira",
-    phone: "+55 51 90099-4455",
-    initials: "AM",
-    avatarColor: "from-teal-500 to-emerald-700",
-    lastMessage: "O boleto venceu, consigo pagar com Pix mesmo assim?",
-    time: "Ontem",
-    unread: 1,
-    agentName: "Sofia",
-    agentColor: "text-violet-400 bg-violet-500/15",
-    status: "Ativa",
-  },
-];
+// ─── Status helpers ───────────────────────────────────────────────────────────
 
-const MOCK_MESSAGES: ChatMessage[] = [
-  {
-    id: "m1",
-    role: "bot",
-    text: "Olá! Sou a Sofia, assistente virtual da Zaia. Como posso te ajudar hoje? 😊",
-    time: "14:02",
-  },
-  {
-    id: "m2",
-    role: "user",
-    text: "Oi! Quero saber mais sobre o plano Premium, por favor.",
-    time: "14:03",
-  },
-  {
-    id: "m3",
-    role: "bot",
-    text: "Claro! O Plano Premium inclui atendimento ilimitado via WhatsApp, inteligência artificial treinada com seus dados, relatórios em tempo real e suporte prioritário. O valor é R$ 297/mês.",
-    time: "14:03",
-  },
-  {
-    id: "m4",
-    role: "user",
-    text: "E tem integração com sistemas de CRM?",
-    time: "14:04",
-  },
-  {
-    id: "m5",
-    role: "bot",
-    text: "Sim! Temos integrações nativas com HubSpot, RD Station, Salesforce e via Zapier você conecta com centenas de outras ferramentas.",
-    time: "14:04",
-  },
-  {
-    id: "m6",
-    role: "user",
-    text: "Que ótimo! E o contrato é mensal ou anual?",
-    time: "14:05",
-  },
-  {
-    id: "m7",
-    role: "bot",
-    text: "Você pode escolher! Mensal sem fidelidade, ou anual com 20% de desconto — fica R$ 237,60/mês no plano anual. Qual prefere?",
-    time: "14:05",
-  },
-  {
-    id: "m8",
-    role: "user",
-    text: "Vou pensar e te retorno. Muito obrigada!",
-    time: "14:06",
-  },
-];
+function displayStatus(conv: ConvSummary): "Ativa" | "Aguardando" | "Finalizada" {
+  if (conv.status === "CLOSED") return "Finalizada";
+  if (conv.humanTakeover || conv.status === "PENDING") return "Aguardando";
+  return "Ativa";
+}
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+function matchesFilter(conv: ConvSummary, filter: FilterType): boolean {
+  if (filter === "Todas") return true;
+  const ds = displayStatus(conv);
+  if (filter === "Ativas") return ds === "Ativa";
+  if (filter === "Aguardando") return ds === "Aguardando";
+  return ds === "Finalizada";
+}
 
-function filterConvs(list: Conversation[], filter: FilterType, q: string): Conversation[] {
-  let result = list;
-  if (filter === "Ativas") result = result.filter((c) => c.status === "Ativa");
-  else if (filter === "Aguardando") result = result.filter((c) => c.status === "Aguardando");
-  else if (filter === "Finalizadas") result = result.filter((c) => c.status === "Finalizada");
-  if (q.trim()) {
-    const lower = q.toLowerCase();
-    result = result.filter(
-      (c) =>
-        c.name.toLowerCase().includes(lower) ||
-        c.phone.includes(q) ||
-        c.lastMessage.toLowerCase().includes(lower)
-    );
+function timeAgo(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Ontem";
+  return `${days}d`;
+}
+
+function initials(name: string | null, phone: string): string {
+  if (name) {
+    const parts = name.trim().split(" ");
+    return parts.length > 1
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : name.slice(0, 2).toUpperCase();
   }
-  return result;
+  return phone.slice(-2);
 }
 
-// ─── Status badge (conversation) ──────────────────────────────────────────────
+const AVATAR_COLORS = [
+  "from-violet-500 to-purple-700",
+  "from-blue-500 to-blue-700",
+  "from-emerald-500 to-teal-600",
+  "from-amber-500 to-orange-600",
+  "from-pink-500 to-rose-600",
+  "from-cyan-500 to-blue-600",
+  "from-indigo-500 to-violet-700",
+  "from-red-500 to-rose-700",
+];
 
-function ConvStatusBadge({ status }: { status: ConvStatus }) {
+function avatarColor(id: string): string {
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) & 0xffff;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ conv }: { conv: ConvSummary }) {
+  const status = displayStatus(conv);
   if (status === "Ativa")
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
@@ -258,7 +114,7 @@ function ConvStatusBadge({ status }: { status: ConvStatus }) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/25">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-        Aguardando
+        {conv.humanTakeover ? "Humano" : "Aguardando"}
       </span>
     );
   return (
@@ -276,47 +132,45 @@ function ConvItem({
   selected,
   onClick,
 }: {
-  conv: Conversation;
+  conv: ConvSummary;
   selected: boolean;
   onClick: () => void;
 }) {
+  const ini = initials(conv.contactName, conv.contactPhone);
+  const color = avatarColor(conv.id);
+  const preview = conv.lastMessage?.content ?? conv.contactPhone;
+  const when = timeAgo(conv.updatedAt);
+
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-3.5 flex items-start gap-3 border-b border-white/[0.06] transition-all duration-150
-        ${selected ? "bg-violet-500/10 border-l-2 border-l-violet-500" : "hover:bg-white/[0.04]"}`}
+      className={`w-full text-left px-4 py-3.5 flex items-start gap-3 border-b border-white/[0.06] transition-all duration-150 ${
+        selected ? "bg-violet-500/10 border-l-2 border-l-violet-500" : "hover:bg-white/[0.04]"
+      }`}
     >
-      {/* Avatar */}
       <div
-        className={`w-10 h-10 rounded-full bg-gradient-to-br ${conv.avatarColor} flex items-center justify-center shrink-0 shadow-md`}
+        className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 shadow-md`}
       >
-        <span className="text-white text-xs font-bold">{conv.initials}</span>
+        <span className="text-white text-xs font-bold">{ini}</span>
       </div>
-
-      {/* Content */}
       <div className="flex-1 min-w-0">
-        {/* Name + time */}
         <div className="flex items-center justify-between mb-0.5">
           <span className="text-white/90 text-sm font-semibold truncate pr-2">
-            {conv.name}
+            {conv.contactName ?? conv.contactPhone}
           </span>
-          <span className="text-white/35 text-[11px] shrink-0">{conv.time}</span>
+          <span className="text-white/35 text-[11px] shrink-0">{when}</span>
         </div>
-        {/* Message preview */}
-        <p className="text-white/45 text-xs truncate mb-1.5">{conv.lastMessage}</p>
-        {/* Bottom row: agent badge + unread */}
+        <p className="text-white/45 text-xs truncate mb-1.5">{preview}</p>
         <div className="flex items-center justify-between">
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${conv.agentColor}`}
-          >
-            <Bot size={9} />
-            {conv.agentName}
-          </span>
-          {conv.unread > 0 && (
-            <span className="w-4 h-4 rounded-full bg-violet-500 text-white text-[10px] font-bold flex items-center justify-center shadow-sm shadow-violet-500/40">
-              {conv.unread}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {conv.agent && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md text-violet-400 bg-violet-500/15">
+                <Bot size={9} />
+                {conv.agent.name}
+              </span>
+            )}
+          </div>
+          <StatusBadge conv={conv} />
         </div>
       </div>
     </button>
@@ -325,8 +179,13 @@ function ConvItem({
 
 // ─── Chat bubble ─────────────────────────────────────────────────────────────
 
-function ChatBubble({ msg }: { msg: ChatMessage }) {
-  const isBot = msg.role === "bot";
+function ChatBubble({ msg }: { msg: DbMessage }) {
+  const isBot = msg.role === "ASSISTANT";
+  const time = new Date(msg.createdAt).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
     <div className={`flex ${isBot ? "justify-start" : "justify-end"} mb-3`}>
       {isBot && (
@@ -341,9 +200,9 @@ function ChatBubble({ msg }: { msg: ChatMessage }) {
             : "bg-[#005c4b] text-white/95 rounded-br-sm"
         }`}
       >
-        <p>{msg.text}</p>
+        <p>{msg.content}</p>
         <p className={`text-[10px] mt-1.5 ${isBot ? "text-white/30" : "text-white/40"} text-right`}>
-          {msg.time}
+          {time}
         </p>
       </div>
     </div>
@@ -368,29 +227,122 @@ function EmptyDetail() {
   );
 }
 
+// ─── No conversations ─────────────────────────────────────────────────────────
+
+function EmptyList() {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+        <MessageCircle size={28} className="text-white/20" />
+      </div>
+      <p className="text-white/50 font-medium">Nenhuma conversa ainda</p>
+      <p className="text-white/25 text-sm mt-1">
+        As conversas do WhatsApp aparecerão aqui assim que chegarem
+      </p>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ConversasPage() {
+  const [conversations, setConversations] = useState<ConvSummary[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<ConvDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("Todas");
-  const [messageInput, setMessageInput] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const filters: FilterType[] = ["Todas", "Ativas", "Aguardando", "Finalizadas"];
 
-  const filtered = filterConvs(MOCK_CONVERSATIONS, activeFilter, searchQuery);
-  const selectedConv = MOCK_CONVERSATIONS.find((c) => c.id === selectedId) ?? null;
+  // Fetch conversation list
+  const fetchList = useCallback(() => {
+    setLoadingList(true);
+    fetch("/api/conversations")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.conversations) setConversations(data.conversations);
+      })
+      .catch(console.error)
+      .finally(() => setLoadingList(false));
+  }, []);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  // Fetch conversation detail when selected
+  useEffect(() => {
+    if (!selectedId) {
+      setDetail(null);
+      return;
+    }
+    setLoadingDetail(true);
+    fetch(`/api/conversations/${selectedId}`)
+      .then((r) => r.json())
+      .then((data) => setDetail(data))
+      .catch(console.error)
+      .finally(() => setLoadingDetail(false));
+  }, [selectedId]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [detail?.messages?.length]);
+
+  // Apply filters
+  const filtered = conversations.filter(
+    (c) =>
+      matchesFilter(c, activeFilter) &&
+      (searchQuery.trim() === "" ||
+        (c.contactName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.contactPhone.includes(searchQuery) ||
+        (c.lastMessage?.content ?? "").toLowerCase().includes(searchQuery.toLowerCase())),
+  );
+
+  async function handleTakeover() {
+    if (!detail) return;
+    setActionLoading(true);
+    const newValue = !detail.humanTakeover;
+    await fetch(`/api/conversations/${detail.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ humanTakeover: newValue }),
+    });
+    setDetail((d) => d && { ...d, humanTakeover: newValue });
+    setConversations((list) =>
+      list.map((c) => (c.id === detail.id ? { ...c, humanTakeover: newValue } : c)),
+    );
+    setActionLoading(false);
+  }
+
+  async function handleClose() {
+    if (!detail) return;
+    setActionLoading(true);
+    await fetch(`/api/conversations/${detail.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: detail.status === "CLOSED" ? "OPEN" : "CLOSED" }),
+    });
+    fetchList();
+    setSelectedId(null);
+    setActionLoading(false);
+  }
+
+  const showHuman = detail?.humanTakeover ?? false;
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
 
-      {/* ── Left sidebar: conversation list ──────────────────────────────── */}
+      {/* ── Left sidebar ──────────────────────────────────────────────────── */}
       <div
         className={`${
-          selectedConv ? "hidden lg:flex" : "flex"
+          selectedId ? "hidden lg:flex" : "flex"
         } w-full lg:w-80 shrink-0 flex-col border-r border-white/[0.08] bg-[#0d0d14]`}
       >
-
         {/* Search */}
         <div className="p-3 border-b border-white/[0.06]">
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:border-violet-500/40 transition-colors">
@@ -410,7 +362,7 @@ export default function ConversasPage() {
         </div>
 
         {/* Filter chips */}
-        <div className="flex items-center gap-1 px-3 py-2 border-b border-white/[0.06] overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-1 px-3 py-2 border-b border-white/[0.06] overflow-x-auto">
           <Filter size={11} className="text-white/25 shrink-0 mr-0.5" />
           {filters.map((f) => (
             <button
@@ -430,16 +382,24 @@ export default function ConversasPage() {
         {/* Count */}
         <div className="px-4 py-2 border-b border-white/[0.04]">
           <p className="text-white/30 text-[11px]">
-            {filtered.length} conversa{filtered.length !== 1 ? "s" : ""}
+            {loadingList ? "Carregando…" : `${filtered.length} conversa${filtered.length !== 1 ? "s" : ""}`}
           </p>
         </div>
 
-        {/* Scrollable list */}
+        {/* List */}
         <div className="flex-1 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-              <p className="text-white/30 text-sm">Nenhuma conversa encontrada</p>
+          {loadingList ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 size={22} className="animate-spin text-violet-400" />
             </div>
+          ) : filtered.length === 0 ? (
+            conversations.length === 0 ? (
+              <EmptyList />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                <p className="text-white/30 text-sm">Nenhuma conversa encontrada</p>
+              </div>
+            )
           ) : (
             filtered.map((conv) => (
               <ConvItem
@@ -453,20 +413,25 @@ export default function ConversasPage() {
         </div>
       </div>
 
-      {/* ── Right panel: conversation detail ─────────────────────────────── */}
+      {/* ── Right panel ───────────────────────────────────────────────────── */}
       <div
         className={`${
-          selectedConv ? "flex" : "hidden lg:flex"
+          selectedId ? "flex" : "hidden lg:flex"
         } flex-1 flex-col bg-[#0a0a0f] min-w-0`}
       >
-        {!selectedConv ? (
-          <EmptyDetail />
+        {!selectedId || !detail ? (
+          loadingDetail ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 size={28} className="animate-spin text-violet-400" />
+            </div>
+          ) : (
+            <EmptyDetail />
+          )
         ) : (
           <>
-            {/* Detail header */}
+            {/* Header */}
             <div className="flex items-center justify-between gap-2 px-3 sm:px-5 py-3.5 border-b border-white/[0.08] bg-[#0d0d14] shrink-0">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                {/* Back button (mobile only) */}
                 <button
                   onClick={() => setSelectedId(null)}
                   className="lg:hidden w-8 h-8 rounded-xl flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors shrink-0"
@@ -474,43 +439,59 @@ export default function ConversasPage() {
                 >
                   <ArrowLeft size={18} />
                 </button>
-                {/* Avatar */}
                 <div
-                  className={`w-9 h-9 rounded-full bg-gradient-to-br ${selectedConv.avatarColor} flex items-center justify-center shadow-md shrink-0`}
+                  className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarColor(detail.id)} flex items-center justify-center shadow-md shrink-0`}
                 >
-                  <span className="text-white text-xs font-bold">{selectedConv.initials}</span>
+                  <span className="text-white text-xs font-bold">
+                    {initials(detail.contactName, detail.contactPhone)}
+                  </span>
                 </div>
-                {/* Info */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
-                    <p className="text-white font-semibold text-sm truncate">{selectedConv.name}</p>
-                    <span className="shrink-0">
-                      <ConvStatusBadge status={selectedConv.status} />
-                    </span>
+                    <p className="text-white font-semibold text-sm truncate">
+                      {detail.contactName ?? detail.contactPhone}
+                    </p>
+                    <StatusBadge conv={detail} />
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 min-w-0">
                     <div className="flex items-center gap-1 text-white/40 text-xs min-w-0">
                       <Phone size={10} className="shrink-0" />
-                      <span className="truncate">{selectedConv.phone}</span>
+                      <span className="truncate">{detail.contactPhone}</span>
                     </div>
-                    <div className="hidden sm:flex items-center gap-1 text-white/40 text-xs shrink-0">
-                      <Bot size={10} className="text-violet-400" />
-                      <span className="text-violet-400/80">{selectedConv.agentName}</span>
-                    </div>
+                    {detail.agent && (
+                      <div className="hidden sm:flex items-center gap-1 text-white/40 text-xs shrink-0">
+                        <Bot size={10} className="text-violet-400" />
+                        <span className="text-violet-400/80">{detail.agent.name}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Action buttons */}
+              {/* Actions */}
               <div className="flex items-center gap-2 shrink-0">
-                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-colors">
-                  <UserCheck size={13} />
-                  <span className="hidden xl:inline">Transferir para humano</span>
-                  <span className="xl:hidden">Transferir</span>
+                <button
+                  onClick={handleTakeover}
+                  disabled={actionLoading}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors disabled:opacity-50 ${
+                    showHuman
+                      ? "bg-violet-500/15 text-violet-400 border-violet-500/30 hover:bg-violet-500/25"
+                      : "bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25"
+                  }`}
+                >
+                  {showHuman ? <CheckCircle2 size={13} /> : <UserCheck size={13} />}
+                  <span className="hidden xl:inline">
+                    {showHuman ? "Devolver ao bot" : "Assumir conversa"}
+                  </span>
+                  <span className="xl:hidden">{showHuman ? "Bot" : "Humano"}</span>
                 </button>
-                <button className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/50 border border-white/10 hover:bg-white/5 hover:text-white/70 transition-colors">
+                <button
+                  onClick={handleClose}
+                  disabled={actionLoading}
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/50 border border-white/10 hover:bg-white/5 hover:text-white/70 transition-colors disabled:opacity-50"
+                >
                   <X size={12} />
-                  Finalizar
+                  {detail.status === "CLOSED" ? "Reabrir" : "Finalizar"}
                 </button>
                 <button className="w-8 h-8 rounded-xl flex items-center justify-center text-white/35 hover:text-white/60 hover:bg-white/5 transition-colors border border-white/10 shrink-0">
                   <MoreVertical size={15} />
@@ -518,48 +499,35 @@ export default function ConversasPage() {
               </div>
             </div>
 
-            {/* Messages area */}
+            {/* Messages */}
             <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-5">
-              {MOCK_MESSAGES.map((msg) => (
-                <ChatBubble key={msg.id} msg={msg} />
-              ))}
+              {detail.messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-white/25 text-sm">Nenhuma mensagem ainda</p>
+                </div>
+              ) : (
+                detail.messages.map((msg) => <ChatBubble key={msg.id} msg={msg} />)
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Monitoring notice */}
-            <div className="mx-3 sm:mx-5 mb-2 px-3 py-1.5 rounded-xl bg-violet-500/8 border border-violet-500/20 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_6px_#a78bfa]" />
-              <p className="text-violet-400/80 text-[11px] font-medium">
-                Monitorando — agente está respondendo
-              </p>
-            </div>
-
-            {/* Input bar */}
-            <div className="px-3 sm:px-5 pb-5 shrink-0">
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 focus-within:border-violet-500/40 transition-colors">
-                <input
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      setMessageInput("");
-                    }
-                  }}
-                  placeholder="Digite uma mensagem..."
-                  className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
-                />
-                <button
-                  onClick={() => setMessageInput("")}
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150 shrink-0 ${
-                    messageInput.trim()
-                      ? "bg-gradient-to-br from-violet-600 to-blue-600 text-white hover:opacity-90 shadow-sm shadow-violet-500/30"
-                      : "text-white/20 cursor-default"
-                  }`}
-                >
-                  <Send size={14} />
-                </button>
+            {/* Status bar */}
+            {!showHuman && detail.status === "OPEN" && (
+              <div className="mx-3 sm:mx-5 mb-2 px-3 py-1.5 rounded-xl bg-violet-500/8 border border-violet-500/20 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_6px_#a78bfa]" />
+                <p className="text-violet-400/80 text-[11px] font-medium">
+                  Agente respondendo automaticamente
+                </p>
               </div>
-            </div>
+            )}
+            {showHuman && (
+              <div className="mx-3 sm:mx-5 mb-2 px-3 py-1.5 rounded-xl bg-amber-500/8 border border-amber-500/20 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <p className="text-amber-400/80 text-[11px] font-medium">
+                  Atendimento humano ativo — bot pausado
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
