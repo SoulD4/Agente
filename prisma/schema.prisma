@@ -70,7 +70,10 @@ model Agent {
   avatarUrl      String?
 
   // ── Meta WhatsApp Cloud API ──
-  whatsappPhoneNumberId String? @unique
+  // Not a DB-level @unique: adding a unique constraint via `prisma db push` is a
+  // destructive migration requiring --accept-data-loss. Uniqueness is enforced in
+  // the application layer (see PUT /api/agents/[id]); lookups use findFirst.
+  whatsappPhoneNumberId String?
   whatsappAccessToken   String? @db.Text
 
   createdAt      DateTime    @default(now())
@@ -81,6 +84,7 @@ model Agent {
   knowledgeBases KnowledgeBase[] @relation("AgentKnowledgeBases")
 
   @@index([organizationId])
+  @@index([whatsappPhoneNumberId])
 }
 
 // ─── Conversations ────────────────────────────────────────────────────────────

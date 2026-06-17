@@ -79,7 +79,7 @@ async function processWebhook(body: WhatsAppWebhookBody) {
       if (!phoneNumberId) continue;
 
       // Find the agent bound to this WhatsApp number.
-      const agent = await prisma.agent.findUnique({
+      const agent = await prisma.agent.findFirst({
         where: { whatsappPhoneNumberId: phoneNumberId },
       });
       if (!agent || !agent.whatsappAccessToken) continue;

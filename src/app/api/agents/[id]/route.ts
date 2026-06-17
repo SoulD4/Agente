@@ -31,6 +31,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const body = await req.json();
 
+  // Enforce WhatsApp number uniqueness at the application layer (no DB @unique):
+  // a phone_number_id may only be bound to one agent, otherwise webhook routing
+  // would be ambiguous.
+  if (body.whatsappPhoneNumberId) {
+    const clash = await prisma.agent.findFirst({
+      where: { whatsappPhoneNumberId: body.whatsappPhoneNumberId, id: { not: id } },
+      select: { id: true },
+    });
+    if (clash) {
+      return NextResponse.json(
+        { error: "Este número de WhatsApp já está conectado a outro agente." },
+        { status: 409 },
+      );
+    }
+  }
+
   const agent = await prisma.agent.update({
     where: { id },
     data: {
