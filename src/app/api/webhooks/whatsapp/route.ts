@@ -146,14 +146,22 @@ async function processWebhook(body: WhatsAppWebhookBody) {
           },
         });
 
-        // Attempt delivery. Capture failures into a visible SYSTEM message so the
-        // operator can diagnose without reading server logs.
+        // Attempt delivery — always log the Meta API result as a SYSTEM message
+        // so the operator can diagnose delivery issues without server-log access.
         try {
-          await sendWhatsAppText({
+          const sendResult = await sendWhatsAppText({
             phoneNumberId,
             accessToken: agent.whatsappAccessToken,
             to: contactPhone,
             text: reply,
+          });
+          const waId = sendResult?.messages?.[0]?.id ?? "sem ID";
+          await prisma.message.create({
+            data: {
+              conversationId: conversation.id,
+              role: "SYSTEM",
+              content: `✅ Enviado para a Meta (ID: ${waId}). Se não chegou no WhatsApp, o problema é a entrega pela Meta.`,
+            },
           });
         } catch (sendErr) {
           const detail = sendErr instanceof Error ? sendErr.message : String(sendErr);
@@ -162,7 +170,7 @@ async function processWebhook(body: WhatsAppWebhookBody) {
             data: {
               conversationId: conversation.id,
               role: "SYSTEM",
-              content: `⚠️ Falha ao enviar pelo WhatsApp: ${detail}`,
+              content: `⚠️ Erro ao enviar: ${detail}`,
             },
           });
         }
